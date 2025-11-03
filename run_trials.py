@@ -224,6 +224,8 @@ async def run_single_trial(
     prompt: str,
     tools: List[Dict],
     tool_handlers: Dict[str, Callable],
+    dataset_path: str,
+    target_column: str,
     verbose: bool = False,
 ) -> Dict[str, Any]:
     """Run a single trial and return results."""
@@ -246,7 +248,9 @@ async def run_single_trial(
 
     # Grade the submission
     if result:
-        success, feedback, detailed_results = grade_submission(result)
+        success, feedback, detailed_results = grade_submission(
+            result, dataset_path=dataset_path, target_column=target_column
+        )
     else:
         success = False
         feedback = "No answer submitted"
@@ -268,7 +272,11 @@ async def run_single_trial(
     return trial_result
 
 
-async def main(concurrent: bool = True):
+async def main(
+    concurrent: bool = True,
+    dataset_path: str = "task/data/sample_dataset.csv",
+    target_column: str = "Target",
+):
     """Main evaluation function."""
     
     # Load task prompt
@@ -300,6 +308,8 @@ async def main(concurrent: bool = True):
             prompt=prompt,
             tools=tools,
             tool_handlers=tool_handlers,
+            dataset_path=dataset_path,
+            target_column=target_column,
             verbose=False,
         )
         for i in range(num_trials)
@@ -346,41 +356,95 @@ async def main(concurrent: bool = True):
         print("⚠️  WARNING: Pass rate too high. Consider making task harder.")
 
     # Save results
-    save_results(results, pass_rate, total_duration)
+    save_results(results, pass_rate, total_duration, dataset_path)
 
 
-def save_results(results: List[Dict], pass_rate: float, duration: float):
+def save_results(
+    results: List[Dict],
+    pass_rate: float,
+    duration: float,
+    dataset_path: str,
+):
     """Save detailed results and summary."""
     
     # Create results directory
     os.makedirs("results", exist_ok=True)
     
-    # Save detailed results
-    timestamp = datetime.now().strftime("%Y-%m-%d")
-    results_file = f"results/runs_{timestamp}.json"
+    # --- Append to pass_rate.txt ---
+    with open("results/pass_rate.txt", 'a') as f:
+        f.write(f"--- {datetime.now().strftime('%Y-%m-%d %H:%M:%S')} ---\n")
+        f.write(f"Dataset: {dataset_path}\n")
+        f.write(f"Pass Rate: {pass_rate:.1f}%\n")
+        f.write(f"Target Range: 10-40%\n")
+        f.write(f"Status: {'✓ GOOD' if 10 <= pass_rate <= 40 else '⚠ ADJUST'}\n\n")
+
+    # --- Append to all_runs.json ---
+    json_file = "results/all_runs.json"
     
-    summary = {
+    # Create a summary for the current run
+    current_run_summary = {
         "timestamp": datetime.now().isoformat(),
+        "dataset_used": dataset_path,
         "total_trials": len(results),
         "pass_rate": pass_rate,
         "duration_seconds": duration,
         "target_range": [10, 40],
         "trials": results
     }
+
+    # Read existing runs or start a new list
+    if os.path.exists(json_file):
+        with open(json_file, 'r') as f:
+            try:
+                all_runs = json.load(f)
+            except json.JSONDecodeError:
+                all_runs = [] # Start fresh if file is corrupted
+    else:
+        all_runs = []
+
+    # Append the new run and write back
+    all_runs.append(current_run_summary)
+    with open(json_file, 'w') as f:
+        json.dump(all_runs, f, indent=2)
     
-    with open(results_file, 'w') as f:
-        json.dump(summary, f, indent=2)
-    
-    # Save pass rate summary
-    with open("results/pass_rate.txt", 'w') as f:
-        f.write(f"Pass Rate: {pass_rate:.1f}%\n")
-        f.write(f"Target Range: 10-40%\n")
-        f.write(f"Status: {'✓ GOOD' if 10 <= pass_rate <= 40 else '⚠ ADJUST'}\n")
-        f.write(f"Last Updated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
-    
-    print(f"\n📄 Results saved to: {results_file}")
+    print(f"\n📄 Results appended to: {json_file} and results/pass_rate.txt")
 
 
 if __name__ == "__main__":
-    # Set to True for concurrent execution, False for sequential
-    asyncio.run(main(concurrent=True))
+    import argparse
+
+    parser = argparse.ArgumentParser(description="Run RL task evaluation.")
+    parser.add_argument(
+        "--dataset-path",
+        type=str,
+        default="task/data/sample_dataset.csv",
+        help="Path to the dataset CSV file.",
+    )
+    parser.add_argument(
+        "--target-column",
+        type=str,
+        default="Target",
+        help="Name of the target column in the dataset.",
+    )
+    parser.add_argument(
+        "--concurrent",
+        action="store_true",
+        help="Run trials concurrently.",
+    )
+    parser.add_argument(
+        "--no-concurrent",
+        dest="concurrent",
+        action="store_false",
+        help="Run trials sequentially.",
+    )
+    parser.set_defaults(concurrent=True)
+
+    args = parser.parse_args()
+
+    asyncio.run(
+        main(
+            concurrent=args.concurrent,
+            dataset_path=args.dataset_path,
+            target_column=args.target_column,
+        )
+    )

@@ -23,49 +23,37 @@ Simple framework for creating and testing RL tasks for LLM training.
    ```
 
 4. Run the task evaluation:
-   ```
-   # Default dataset
+
+   The `run_trials.py` script is the single entrypoint for running evaluations.
+
+   **Default Dataset**
+
+   To run the evaluation with the default local dataset (`task/data/sample_dataset.csv`):
+   ```bash
    uv run run_trials.py
-   
-   # Custom dataset from URL
-   uv run run_with_dataset.py --dataset-url "https://example.com/data.csv" --target-column "target"
-   
-   # Interactive mode
-   uv run run_custom.py
    ```
 
+   **Custom Dataset**
 
-
-## Current Task: Data Preprocessing Pipeline Fix
-
-Challenges models to fix bugs in a data preprocessing pipeline, teaching:
-- Data leakage prevention
-- Proper missing value handling  
-- Categorical encoding best practices
-- Input/output validation
-
-## Dataset Options
-
-### Default Dataset
-- **File**: `task/data/sample_dataset.csv`
-- **Size**: 25 rows × 8 columns
-- **Features**: Mixed data types with missing values
-- **Target**: Binary classification (0/1)
-
-### Custom Datasets
-- **Download from URL**: Use any CSV dataset from the internet
-- **Local files**: Use existing files in `task/data/`
-- **Flexible targets**: Specify any column as target
-
-## Target Success Rate
-
-Aim for 10-40% pass rate for effective RL training.
+   You can specify a custom dataset using command-line arguments. The script can be pointed to any local CSV file.
+   ```bash
+   uv run run_trials.py --dataset-path "path/to/your/data.csv" --target-column "your_target_column_name"
+   ```
 
 ## Execution Modes
 
-Edit `concurrent` parameter in `run_trials.py`:
+You can control the execution mode with command-line flags:
 
-```python
-asyncio.run(main(concurrent=True))   # Faster
-asyncio.run(main(concurrent=False))  # Sequential
-```
+- **Concurrent (Default)**: Runs trials in parallel for speed.
+  ```bash
+  uv run run_trials.py
+  ```
+- **Sequential**: Runs trials one by one. Useful for debugging.
+  ```bash
+  uv run run_trials.py --no-concurrent
+  ```
+
+## Logging
+
+- **`results/pass_rate.txt`**: A summary of each run, including the data source and pass rate, is appended here.
+- **`results/all_runs.json`**: Detailed results for every trial in every run are appended to this single file for a complete chronological record.

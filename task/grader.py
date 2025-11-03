@@ -16,7 +16,7 @@ from sklearn.pipeline import Pipeline
 def grade_submission(
     submitted_code,
     dataset_path="task/data/sample_dataset.csv",
-    target_column="target",
+    target_column="Target",
 ):
     """
     Grade the submitted preprocessing function.

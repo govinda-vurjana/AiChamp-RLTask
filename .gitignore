@@ -46,8 +46,8 @@ ehthumbs.db
 Thumbs.db
 
 # Results (optional - you might want to track these)
-results/runs_*.json
-evaluation_results_*.json
+# results/runs_*.json
+# evaluation_results_*.json
 
 # API keys and secrets
 .env.local
