@@ -1,7 +1,49 @@
-RL Task for LLM Training
-===
+# RL Task for LLM Training
 
-Simple framework for creating and testing RL tasks for LLM training.
+## Project Overview
+
+This project provides a framework for creating and evaluating Reinforcement Learning (RL) tasks for Large Language Models (LLMs). The goal is to teach an LLM a practical skill that a Machine Learning Engineer or researcher would use in their daily work.
+
+### The Task: Fixing a Data Preprocessing Pipeline
+
+The specific task in this repository challenges an AI agent to fix a broken data preprocessing pipeline. The agent is given a prompt explaining the requirements and a set of tools to interact with the environment. The agent's goal is to write a Python function called `preprocess_data` that correctly cleans, transforms, and prepares a dataset for model training, addressing common issues like missing values, categorical data, and data leakage.
+
+The evaluation is run for 10 trials by default, and the target success rate is between 10% and 40% to ensure the task is neither too easy nor too hard for effective learning.
+
+### How It Works
+
+1.  The `run_trials.py` script is executed.
+2.  The script loads the task prompt from `task/prompt.txt` and presents it to the AI agent.
+3.  The agent uses the tools available in `task/tool_api.py` (like `python_expression` and `file_reader`) to understand the problem and develop a solution.
+4.  The agent submits its final code for the `preprocess_data` function using the `submit_answer` tool.
+5.  The `task/grader.py` script executes the submitted function and evaluates it against a list of 9 rigorous requirements.
+6.  The results are saved and appended to log files in the `results/` directory.
+
+### File Breakdown
+
+-   `run_trials.py`: The main entry point for running the evaluation. It handles command-line arguments, orchestrates the trials, and saves the results.
+-   `task/prompt.txt`: A text file containing the detailed instructions and requirements for the AI agent.
+-   `task/tool_api.py`: Defines the set of Python tools the agent can use to interact with the system, such as executing code or reading files.
+-   `task/grader.py`: Contains the core logic for evaluating the agent's submitted code. This is the most critical part of the task's verification.
+-   `task/data/sample_dataset.csv`: The default dataset used for the evaluation.
+-   `results/`: This directory stores the output logs. `pass_rate.txt` contains a running summary, and `all_runs.json` contains detailed, append-only logs of every trial.
+-   `README.md`: This file, providing documentation for the project.
+
+### The Grading Process in Detail
+
+The grader is designed to be robust and flexible, allowing for multiple correct solution approaches. It evaluates the submitted `preprocess_data` function based on the quality of the output data and the methods used. A submission is considered successful if it passes at least **5 out of the 9** requirements:
+
+1.  **No Missing Values**: Checks that the final `X_train` and `X_test` dataframes contain no `NaN` values.
+2.  **No Infinite Values**: Ensures the final dataframes do not contain any infinite values.
+3.  **Correct Train/Test Split**: Verifies that the data was split into the correct proportions (e.g., an 80/20 split).
+4.  **All Features Numeric**: Confirms that all categorical features have been successfully converted to a numeric format (e.g., through one-hot encoding).
+5.  **Feature Normalization**: Checks that the numerical features have been standardized (e.g., using `StandardScaler`), indicated by a mean close to 0 and a standard deviation close to 1.
+6.  **No Data Leakage**: Looks for evidence that preprocessing steps (like scaling) were fitted on the training data *before* being applied to the test data. It checks for the correct usage of `fit_transform` and `transform` or a `Pipeline`.
+7.  **Categorical Variables Handled**: Ensures that categorical variables were not simply dropped, typically by checking if the number of features has increased (due to one-hot encoding).
+8.  **Target Distribution Preserved**: Verifies that stratified sampling was used during the train/test split by checking for the `stratify` keyword and comparing the target distribution between the original and the training sets.
+9.  **Input Validation**: Checks if the code includes basic error handling, such as `try-except` blocks or checks for the existence of the file or target column.
+
+---
 
 ## Setup Instructions
 
