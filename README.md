@@ -23,6 +23,11 @@ This task is designed to meet the following criteria:
 7. **Suitable Tools**: Simple, model-friendly tools (python_expression, file_reader, submit_answer)
 8. **Concise & Reviewable**: Under 300 lines of core code (prompt + grader + tools)
 
+<img width="1174" height="386" alt="image" src="https://github.com/user-attachments/assets/f17c1004-4a70-44fa-a98f-f94f620dfd2e" />
+
+<img width="1744" height="590" alt="image" src="https://github.com/user-attachments/assets/629b0c34-359b-40e9-819b-e665d9008efd" />
+
+
 ### How It Works
 
 1.  The `run_trials.py` script is executed.
