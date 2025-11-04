@@ -398,5 +398,646 @@
         }
       }
     ]
+  },
+  {
+    "timestamp": "2025-11-04T17:55:10.426600",
+    "dataset_used": "task/data/sample_dataset.csv",
+    "total_trials": 10,
+    "pass_rate": 20.0,
+    "duration_seconds": 249.757212,
+    "target_range": [
+      10,
+      40
+    ],
+    "trials": [
+      {
+        "trial_id": 1,
+        "success": false,
+        "feedback": "Error executing preprocessing function: expected 'except' or 'finally' block (<string>, line 78)",
+        "duration_seconds": 27.580516,
+        "timestamp": "2025-11-04T17:51:00.667861",
+        "submitted_answer": "import pandas as pd\nimport numpy as np\nfrom sklearn.model_selection import train_test_split\nfrom sklearn.preprocessing import StandardScaler, OneHotEncoder\nfrom sklearn.impute import SimpleImputer\nfrom sklearn.compose import ColumnTransformer\nfrom sklearn.pipeline import Pipeline\n\ndef preprocess_data(filepath, target_column='target', test_size=0.2, random_state=42):\n    \"\"\"\n    Preprocess data with comprehensive transformations and no data leakage\n    \n    Parameters:\n    - filepath (str): Path to CSV file\n    - target_column (str): Name of target variable column\n    - test_size (float): Proportion of test set\n    - random_state (int): Random seed for reproducibility\n    \n    Returns:\n    - X_train, X_test, y_train, y_test (processed datasets)\n    \"\"\"\n    try:\n        # 1. Load dataset\n        df = pd.read_csv(filepath)\n        \n        # Validate input\n        if target_column not in df.columns:\n            raise ValueError(f\"Target column '{target_column}' not found in dataset\")\n        \n        # Separate features and target\n        X = df.drop(columns=[target_column])\n        y = df[target_column]\n        \n        # Identify column types\n        numeric_features = X.select_dtypes(include=['int64', 'float64']).columns\n        categorical_features = X.select_dtypes(include=['object']).columns\n        \n        # 2 & 3. Create preprocessing pipelines for numeric and categorical data\n        numeric_transformer = Pipeline(steps=[\n            ('imputer', SimpleImputer(strategy='median')),  # Handle missing numeric values\n            ('scaler', StandardScaler())  # Normalize numeric features\n        ])\n        \n        categorical_transformer = Pipeline(steps=[\n            ('imputer', SimpleImputer(strategy='most_frequent')),  # Handle missing categorical values\n            ('onehot', OneHotEncoder(sparse_output=False, drop='first'))  # One-hot encode with first column dropped\n        ])\n        \n        # 4. Combine transformations\n        preprocessor = ColumnTransformer(\n            transformers=[\n                ('num', numeric_transformer, numeric_features),\n                ('cat', categorical_transformer, categorical_features)\n            ])\n        \n        # 5 & 6. STRATIFIED Train-Test Split (critical to avoid data leakage)\n        X_train, X_test, y_train, y_test = train_test_split(\n            X, y, \n            test_size=test_size, \n            random_state=random_state, \n            stratify=y\n        )\n        \n        # 7. Fit preprocessor ONLY on training data to prevent leakage\n        preprocessor.fit(X_train)\n        \n        # 8. Transform both training and test data\n        X_train_processed = preprocessor.transform(X_train)\n        X_test_processed = preprocessor.transform(X_test)\n        \n        # Validation checks\n        if np.isnan(X_train_processed).any() or np.isnan(X_test_processed).any():\n            raise ValueError(\"NaN values detected after preprocessing\")\n        \n        if np.isinf(X_train_processed).any() or np.isinf(X_test_processed).any():\n            raise ValueError(\"Infinite values detected after preprocessing\")\n        \n        return X_train_processed, X_test_processed, y_train, y_test",
+        "detailed_results": {
+          "total_requirements": 9,
+          "passed_requirements": 0,
+          "failed_requirements": [],
+          "detailed_feedback": []
+        }
+      },
+      {
+        "trial_id": 2,
+        "success": false,
+        "feedback": "Error executing preprocessing function: object of type 'numpy.float64' has no len()",
+        "duration_seconds": 16.743731,
+        "timestamp": "2025-11-04T17:51:28.253200",
+        "submitted_answer": "import pandas as pd\nimport numpy as np\nfrom sklearn.model_selection import train_test_split\nfrom sklearn.preprocessing import StandardScaler, OneHotEncoder\nfrom sklearn.impute import SimpleImputer\nfrom sklearn.compose import ColumnTransformer\nfrom sklearn.pipeline import Pipeline\n\ndef preprocess_data(filepath, target_column, test_size=0.2, random_state=42):\n    \"\"\"\n    Comprehensive data preprocessing function for machine learning.\n    \n    Args:\n        filepath (str): Path to the CSV file\n        target_column (str): Name of the target/label column\n        test_size (float): Proportion of data for testing\n        random_state (int): Random seed for reproducibility\n    \n    Returns:\n        tuple: X_train, X_test, y_train, y_test\n    \"\"\"\n    try:\n        # 1. Load dataset\n        df = pd.read_csv(filepath)\n        \n        # Input validation\n        if target_column not in df.columns:\n            raise ValueError(f\"Target column '{target_column}' not found in dataset\")\n        \n        # Separate features and target\n        X = df.drop(columns=[target_column])\n        y = df[target_column]\n        \n        # Identify column types\n        numeric_features = X.select_dtypes(include=['int64', 'float64']).columns\n        categorical_features = X.select_dtypes(include=['object', 'category', 'bool']).columns\n        \n        # 2. Stratified train-test split BEFORE preprocessing\n        X_train, X_test, y_train, y_test = train_test_split(\n            X, y, \n            test_size=test_size, \n            random_state=random_state, \n            stratify=y\n        )\n        \n        # 3 & 4. Create preprocessing pipelines with NO DATA LEAKAGE\n        numeric_transformer = Pipeline(steps=[\n            ('imputer', SimpleImputer(strategy='median')),  # Handle missing numeric values\n            ('scaler', StandardScaler())  # Standardize numeric features\n        ])\n        \n        categorical_transformer = Pipeline(steps=[\n            ('imputer', SimpleImputer(strategy='most_frequent')),  # Handle missing categorical values\n            ('onehot', OneHotEncoder(sparse_output=False, handle_unknown='ignore', drop='first'))  # One-hot encoding\n        ])\n        \n        # Combine transformers\n        preprocessor = ColumnTransformer(\n            transformers=[\n                ('num', numeric_transformer, numeric_features),\n                ('cat', categorical_transformer, categorical_features)\n            ])\n        \n        # Fit preprocessor on TRAINING data only\n        X_train_processed = preprocessor.fit_transform(X_train)\n        X_test_processed = preprocessor.transform(X_test)\n        \n        # 5. Final validation\n        if np.any(np.isnan(X_train_processed)) or np.any(np.isnan(X_test_processed)):\n            raise ValueError(\"NaN values detected after preprocessing\")\n        \n        if np.any(np.isinf(X_train_processed)) or np.any(np.isinf(X_test_processed)):\n            raise ValueError(\"Infinite values detected after preprocessing\")\n        \n        return X_train_processed, X_test_processed, y_train, y_test\n    \n    except Exception as e:\n        print(f\"Preprocessing error: {e}\")\n        raise",
+        "detailed_results": {
+          "total_requirements": 9,
+          "passed_requirements": 4,
+          "failed_requirements": [],
+          "detailed_feedback": [
+            "\u2713 No missing values in output",
+            "\u2713 No infinite values in output",
+            "\u2713 Correct train/test split ratio",
+            "\u2713 All features properly encoded as numeric"
+          ]
+        }
+      },
+      {
+        "trial_id": 3,
+        "success": false,
+        "feedback": "Error executing preprocessing function: object of type 'numpy.float64' has no len()",
+        "duration_seconds": 17.289259,
+        "timestamp": "2025-11-04T17:51:45.028595",
+        "submitted_answer": "import pandas as pd\nimport numpy as np\nfrom sklearn.model_selection import train_test_split\nfrom sklearn.preprocessing import StandardScaler, OneHotEncoder\nfrom sklearn.compose import ColumnTransformer\nfrom sklearn.pipeline import Pipeline\nfrom sklearn.impute import SimpleImputer\n\ndef preprocess_data(filepath, target_column, test_size=0.2, random_state=42):\n    \"\"\"\n    Comprehensive data preprocessing function with robust error handling.\n    \n    Args:\n        filepath (str): Path to the CSV file\n        target_column (str): Name of the target/label column\n        test_size (float, optional): Proportion of test set. Defaults to 0.2.\n        random_state (int, optional): Random seed for reproducibility. Defaults to 42.\n    \n    Returns:\n        tuple: X_train, X_test, y_train, y_test after preprocessing\n    \"\"\"\n    try:\n        # 1. Load dataset\n        try:\n            df = pd.read_csv(filepath)\n        except Exception as e:\n            raise ValueError(f\"Error loading dataset: {e}\")\n        \n        # Input validation\n        if target_column not in df.columns:\n            raise ValueError(f\"Target column '{target_column}' not found in dataset\")\n        \n        # Separate features and target\n        X = df.drop(columns=[target_column])\n        y = df[target_column]\n        \n        # Identify column types\n        numeric_features = X.select_dtypes(include=['int64', 'float64']).columns\n        categorical_features = X.select_dtypes(include=['object', 'category', 'bool']).columns\n        \n        # 2 & 3. Handle missing values and create preprocessing steps\n        numeric_transformer = Pipeline(steps=[\n            ('imputer', SimpleImputer(strategy='median')),  # Missing numeric values filled with median\n            ('scaler', StandardScaler())  # Normalize numeric features\n        ])\n        \n        categorical_transformer = Pipeline(steps=[\n            ('imputer', SimpleImputer(strategy='most_frequent')),  # Missing categorical values filled with mode\n            ('onehot', OneHotEncoder(sparse_output=False, handle_unknown='ignore', drop='first'))  # One-hot encode\n        ])\n        \n        # Combine preprocessing steps\n        preprocessor = ColumnTransformer(\n            transformers=[\n                ('num', numeric_transformer, numeric_features),\n                ('cat', categorical_transformer, categorical_features)\n            ])\n        \n        # 5 & 6. Stratified train-test split (preserving target distribution)\n        X_train, X_test, y_train, y_test = train_test_split(\n            X, y, \n            test_size=test_size, \n            stratify=y, \n            random_state=random_state\n        )\n        \n        # 2-7. Preprocess data (NO DATA LEAKAGE)\n        # Fit on training data only\n        X_train_preprocessed = preprocessor.fit_transform(X_train)\n        X_test_preprocessed = preprocessor.transform(X_test)\n        \n        # 8. Validate final output\n        if (np.isnan(X_train_preprocessed).any() or \n            np.isnan(X_test_preprocessed).any() or \n            np.isinf(X_train_preprocessed).any() or \n            np.isinf(X_test_preprocessed).any()):\n            raise ValueError(\"Preprocessing resulted in NaN or infinite values\")\n        \n        return X_train_preprocessed, X_test_preprocessed, y_train, y_test\n    \n    except Exception as e:\n        print(f\"Preprocessing failed: {e}\")\n        raise",
+        "detailed_results": {
+          "total_requirements": 9,
+          "passed_requirements": 4,
+          "failed_requirements": [],
+          "detailed_feedback": [
+            "\u2713 No missing values in output",
+            "\u2713 No infinite values in output",
+            "\u2713 Correct train/test split ratio",
+            "\u2713 All features properly encoded as numeric"
+          ]
+        }
+      },
+      {
+        "trial_id": 4,
+        "success": true,
+        "feedback": "Passed 8/9 requirements - Good job!",
+        "duration_seconds": 32.889386,
+        "timestamp": "2025-11-04T17:52:02.348095",
+        "submitted_answer": "import pandas as pd\nimport numpy as np\nfrom sklearn.model_selection import train_test_split\nfrom sklearn.preprocessing import StandardScaler, OneHotEncoder\nfrom sklearn.impute import SimpleImputer\nfrom sklearn.compose import ColumnTransformer\nfrom sklearn.pipeline import Pipeline\n\ndef preprocess_data(filepath, target_column, test_size=0.2, random_state=42):\n    \"\"\"\n    Comprehensive data preprocessing function with multiple validation steps.\n    \n    Args:\n        filepath (str): Path to the CSV file\n        target_column (str): Name of the target/label column\n        test_size (float, optional): Proportion of test set. Defaults to 0.2.\n        random_state (int, optional): Random seed for reproducibility. Defaults to 42.\n    \n    Returns:\n        tuple: X_train, X_test, y_train, y_test processed datasets\n    \"\"\"\n    try:\n        # 1. Load the dataset\n        df = pd.read_csv(filepath)\n        \n        # Input validation\n        if target_column not in df.columns:\n            raise ValueError(f\"Target column '{target_column}' not found in dataset\")\n        \n        # Separate features and target\n        X = df.drop(columns=[target_column])\n        y = df[target_column]\n        \n        # Identify column types\n        numeric_features = X.select_dtypes(include=['int64', 'float64']).columns\n        categorical_features = X.select_dtypes(include=['object', 'category', 'bool']).columns\n        \n        # Stratified train-test split BEFORE preprocessing to prevent data leakage\n        X_train, X_test, y_train, y_test = train_test_split(\n            X, y, \n            test_size=test_size, \n            random_state=random_state, \n            stratify=y\n        )\n        \n        # Create preprocessing pipelines\n        numeric_transformer = Pipeline(steps=[\n            ('imputer', SimpleImputer(strategy='median')),  # Handle missing numeric values\n            ('scaler', StandardScaler())  # Normalize numeric features\n        ])\n        \n        categorical_transformer = Pipeline(steps=[\n            ('imputer', SimpleImputer(strategy='most_frequent')),  # Handle missing categorical values\n            ('onehot', OneHotEncoder(sparse_output=False, drop='first'))  # One-hot encode with dropping first category\n        ])\n        \n        # Combine transformers\n        preprocessor = ColumnTransformer(\n            transformers=[\n                ('num', numeric_transformer, numeric_features),\n                ('cat', categorical_transformer, categorical_features)\n            ])\n        \n        # Fit preprocessor on training data only\n        X_train_processed = preprocessor.fit_transform(X_train)\n        X_test_processed = preprocessor.transform(X_test)\n        \n        # Get feature names after preprocessing\n        feature_names = (\n            list(numeric_features) + \n            list(preprocessor.named_transformers_['cat'].named_steps['onehot'].get_feature_names_out(categorical_features))\n        )\n        \n        # Convert to DataFrame for better readability\n        X_train_processed = pd.DataFrame(X_train_processed, columns=feature_names, index=X_train.index)\n        X_test_processed = pd.DataFrame(X_test_processed, columns=feature_names, index=X_test.index)\n        \n        # Validation checks\n        def validate_dataframe(df):\n            if df.isnull().any().any():\n                raise ValueError(\"Processed data contains NaN values\")\n            if np.isinf(df).any().any():\n                raise ValueError(\"Processed data contains infinite values\")\n        \n        validate_dataframe(X_train_processed)\n        validate_dataframe(X_test_processed)\n        \n        return X_train_processed, X_test_processed, y_train, y_test\n    \n    except Exception as e:\n        print(f\"Error in preprocessing: {e}\")\n        raise",
+        "detailed_results": {
+          "total_requirements": 9,
+          "passed_requirements": 8,
+          "failed_requirements": [
+            "Features not properly normalized"
+          ],
+          "detailed_feedback": [
+            "\u2713 No missing values in output",
+            "\u2713 No infinite values in output",
+            "\u2713 Correct train/test split ratio",
+            "\u2713 All features properly encoded as numeric",
+            "\u2717 Only 4/13 features normalized",
+            "\u2713 Code suggests proper fit/transform usage or pipeline construction",
+            "\u2713 Categorical variables handled (feature count increased)",
+            "\u2713 Target distribution preserved (stratify used and check passed)",
+            "\u2713 Code includes input validation or error handling"
+          ]
+        }
+      },
+      {
+        "trial_id": 5,
+        "success": false,
+        "feedback": "Error executing preprocessing function: object of type 'numpy.float64' has no len()",
+        "duration_seconds": 24.320294,
+        "timestamp": "2025-11-04T17:52:35.277970",
+        "submitted_answer": "import pandas as pd\nimport numpy as np\nfrom sklearn.model_selection import train_test_split\nfrom sklearn.preprocessing import StandardScaler, OneHotEncoder\nfrom sklearn.impute import SimpleImputer\nfrom sklearn.compose import ColumnTransformer\nfrom sklearn.pipeline import Pipeline\n\ndef preprocess_data(filepath, target_column, test_size=0.2, random_state=42):\n    \"\"\"\n    Preprocess data with comprehensive error handling and feature engineering.\n    \n    Parameters:\n    - filepath (str): Path to CSV file\n    - target_column (str): Name of the target column\n    - test_size (float): Proportion of test set (default 0.2)\n    - random_state (int): Random seed for reproducibility\n    \n    Returns:\n    - X_train (np.array): Preprocessed training features\n    - X_test (np.array): Preprocessed test features\n    - y_train (np.array): Training target values\n    - y_test (np.array): Test target values\n    \"\"\"\n    try:\n        # 1. Load data\n        df = pd.read_csv(filepath)\n        \n        # Input validation\n        if target_column not in df.columns:\n            raise ValueError(f\"Target column {target_column} not found in dataset\")\n        \n        # Separate features and target\n        X = df.drop(columns=[target_column])\n        y = df[target_column]\n        \n        # Identify column types\n        numeric_features = X.select_dtypes(include=['int64', 'float64']).columns\n        categorical_features = X.select_dtypes(include=['object', 'category', 'bool']).columns\n        \n        # Preprocessing steps\n        numeric_transformer = Pipeline(steps=[\n            ('imputer', SimpleImputer(strategy='median')),  # Handle numeric missing values\n            ('scaler', StandardScaler())  # Standardize numeric features\n        ])\n        \n        categorical_transformer = Pipeline(steps=[\n            ('imputer', SimpleImputer(strategy='constant', fill_value='missing')),  # Handle categorical missing values\n            ('onehot', OneHotEncoder(sparse_output=False, drop='first'))  # One-hot encode with dropping first category\n        ])\n        \n        # Create column transformer\n        preprocessor = ColumnTransformer(\n            transformers=[\n                ('num', numeric_transformer, numeric_features),\n                ('cat', categorical_transformer, categorical_features)\n            ])\n        \n        # Split data BEFORE preprocessing (to avoid data leakage)\n        X_train, X_test, y_train, y_test = train_test_split(\n            X, y, \n            test_size=test_size, \n            random_state=random_state, \n            stratify=y  # Stratified sampling\n        )\n        \n        # Fit preprocessor on training data and transform both train and test\n        X_train_processed = preprocessor.fit_transform(X_train)\n        X_test_processed = preprocessor.transform(X_test)\n        \n        # Validate output\n        if np.any(np.isnan(X_train_processed)) or np.any(np.isinf(X_train_processed)) or \\\n           np.any(np.isnan(X_test_processed)) or np.any(np.isinf(X_test_processed)):\n            raise ValueError(\"Preprocessing resulted in NaN or infinite values\")\n        \n        return X_train_processed, X_test_processed, y_train, y_test\n    \n    except Exception as e:\n        print(f\"Error in data preprocessing: {e}\")\n        raise",
+        "detailed_results": {
+          "total_requirements": 9,
+          "passed_requirements": 4,
+          "failed_requirements": [],
+          "detailed_feedback": [
+            "\u2713 No missing values in output",
+            "\u2713 No infinite values in output",
+            "\u2713 Correct train/test split ratio",
+            "\u2713 All features properly encoded as numeric"
+          ]
+        }
+      },
+      {
+        "trial_id": 6,
+        "success": true,
+        "feedback": "Passed 8/9 requirements - Good job!",
+        "duration_seconds": 32.480125,
+        "timestamp": "2025-11-04T17:52:59.623835",
+        "submitted_answer": "import pandas as pd\nimport numpy as np\nfrom sklearn.model_selection import train_test_split\nfrom sklearn.preprocessing import StandardScaler, OneHotEncoder\nfrom sklearn.impute import SimpleImputer\nfrom sklearn.compose import ColumnTransformer\nfrom sklearn.pipeline import Pipeline\n\ndef preprocess_data(filepath, target_column, test_size=0.2, random_state=42):\n    \"\"\"\n    Comprehensive data preprocessing pipeline with no data leakage\n    \n    Args:\n        filepath (str): Path to input CSV file\n        target_column (str): Name of the target variable column\n        test_size (float): Proportion of test set (default 0.2)\n        random_state (int): Seed for reproducibility\n    \n    Returns:\n        X_train (pd.DataFrame): Preprocessed training features\n        X_test (pd.DataFrame): Preprocessed testing features\n        y_train (pd.Series): Training target variable\n        y_test (pd.Series): Testing target variable\n    \"\"\"\n    try:\n        # Load data\n        df = pd.read_csv(filepath)\n        \n        # Validate input\n        if target_column not in df.columns:\n            raise ValueError(f\"Target column '{target_column}' not found in dataset\")\n        \n        # Separate features and target\n        X = df.drop(columns=[target_column])\n        y = df[target_column]\n        \n        # Identify column types\n        numeric_features = X.select_dtypes(include=['int64', 'float64']).columns\n        categorical_features = X.select_dtypes(include=['object', 'bool']).columns\n        \n        # Stratified train-test split (BEFORE preprocessing to prevent leakage)\n        X_train, X_test, y_train, y_test = train_test_split(\n            X, y, \n            test_size=test_size, \n            random_state=random_state, \n            stratify=y\n        )\n        \n        # Create preprocessing pipelines\n        numeric_transformer = Pipeline(steps=[\n            ('imputer', SimpleImputer(strategy='median')),\n            ('scaler', StandardScaler())\n        ])\n        \n        categorical_transformer = Pipeline(steps=[\n            ('imputer', SimpleImputer(strategy='constant', fill_value='missing')),\n            ('onehot', OneHotEncoder(sparse_output=False, drop='first', handle_unknown='ignore'))\n        ])\n        \n        # Combine transformers\n        preprocessor = ColumnTransformer(\n            transformers=[\n                ('num', numeric_transformer, numeric_features),\n                ('cat', categorical_transformer, categorical_features)\n            ])\n        \n        # Fit preprocessor only on training data\n        X_train_processed = preprocessor.fit_transform(X_train)\n        X_test_processed = preprocessor.transform(X_test)\n        \n        # Convert to DataFrames with proper column names\n        feature_names = (\n            list(numeric_features) + \n            list(preprocessor.named_transformers_['cat'].named_steps['onehot'].get_feature_names_out(categorical_features))\n        )\n        \n        X_train_processed = pd.DataFrame(X_train_processed, columns=feature_names, index=X_train.index)\n        X_test_processed = pd.DataFrame(X_test_processed, columns=feature_names, index=X_test.index)\n        \n        # Validate output (no NaN or inf values)\n        if (X_train_processed.isna().any().any() or \n            X_test_processed.isna().any().any() or \n            np.isinf(X_train_processed).any().any() or \n            np.isinf(X_test_processed).any().any()):\n            raise ValueError(\"Preprocessing resulted in NaN or infinite values\")\n        \n        return X_train_processed, X_test_processed, y_train, y_test\n    \n    except Exception as e:\n        print(f\"Preprocessing error: {e}\")\n        raise",
+        "detailed_results": {
+          "total_requirements": 9,
+          "passed_requirements": 8,
+          "failed_requirements": [
+            "Features not properly normalized"
+          ],
+          "detailed_feedback": [
+            "\u2713 No missing values in output",
+            "\u2713 No infinite values in output",
+            "\u2713 Correct train/test split ratio",
+            "\u2713 All features properly encoded as numeric",
+            "\u2717 Only 4/13 features normalized",
+            "\u2713 Code suggests proper fit/transform usage or pipeline construction",
+            "\u2713 Categorical variables handled (feature count increased)",
+            "\u2713 Target distribution preserved (stratify used and check passed)",
+            "\u2713 Code includes input validation or error handling"
+          ]
+        }
+      },
+      {
+        "trial_id": 7,
+        "success": false,
+        "feedback": "Error executing preprocessing function: object of type 'numpy.float64' has no len()",
+        "duration_seconds": 17.067481,
+        "timestamp": "2025-11-04T17:53:32.127294",
+        "submitted_answer": "import pandas as pd\nimport numpy as np\nfrom sklearn.model_selection import train_test_split\nfrom sklearn.preprocessing import StandardScaler, OneHotEncoder\nfrom sklearn.impute import SimpleImputer\nfrom sklearn.compose import ColumnTransformer\nfrom sklearn.pipeline import Pipeline\n\ndef preprocess_data(filepath, target_column, test_size=0.2, random_state=42):\n    \"\"\"\n    Comprehensive data preprocessing pipeline with robust error handling.\n    \n    Args:\n        filepath (str): Path to the CSV file\n        target_column (str): Name of the target column for classification\n        test_size (float, optional): Proportion of test set. Defaults to 0.2.\n        random_state (int, optional): Random seed for reproducibility. Defaults to 42.\n    \n    Returns:\n        tuple: (X_train, X_test, y_train, y_test) - preprocessed data\n    \"\"\"\n    try:\n        # 1. Load dataset\n        df = pd.read_csv(filepath)\n        \n        # Input validation\n        if target_column not in df.columns:\n            raise ValueError(f\"Target column '{target_column}' not found in dataset\")\n        \n        # Separate features and target\n        X = df.drop(columns=[target_column])\n        y = df[target_column]\n        \n        # Identify column types\n        numeric_features = X.select_dtypes(include=['int64', 'float64']).columns\n        categorical_features = X.select_dtypes(include=['object', 'category', 'bool']).columns\n        \n        # 2. Create preprocessing pipelines\n        numeric_transformer = Pipeline(steps=[\n            ('imputer', SimpleImputer(strategy='median')),  # Replace missing numeric values with median\n            ('scaler', StandardScaler())  # Normalize numeric features\n        ])\n        \n        categorical_transformer = Pipeline(steps=[\n            ('imputer', SimpleImputer(strategy='constant', fill_value='missing')),  # Replace missing categorical values\n            ('onehot', OneHotEncoder(sparse_output=False, drop='first', handle_unknown='ignore'))  # One-hot encode with first category dropped\n        ])\n        \n        # 3. Combine transformers\n        preprocessor = ColumnTransformer(\n            transformers=[\n                ('num', numeric_transformer, numeric_features),\n                ('cat', categorical_transformer, categorical_features)\n            ])\n        \n        # 4. Stratified train-test split BEFORE preprocessing to prevent data leakage\n        X_train, X_test, y_train, y_test = train_test_split(\n            X, y, \n            test_size=test_size, \n            random_state=random_state, \n            stratify=y  # Preserve class distribution\n        )\n        \n        # 5. Fit preprocessor ONLY on training data\n        preprocessor.fit(X_train)\n        \n        # 6. Transform both train and test data\n        X_train_processed = preprocessor.transform(X_train)\n        X_test_processed = preprocessor.transform(X_test)\n        \n        # 7. Final validation checks\n        def validate_data(X):\n            if np.isnan(X).any() or np.isinf(X).any():\n                raise ValueError(\"Processing resulted in NaN or infinite values\")\n            return X\n        \n        X_train_processed = validate_data(X_train_processed)\n        X_test_processed = validate_data(X_test_processed)\n        \n        return X_train_processed, X_test_processed, y_train, y_test\n    \n    except Exception as e:\n        print(f\"Error in data preprocessing: {e}\")\n        raise",
+        "detailed_results": {
+          "total_requirements": 9,
+          "passed_requirements": 4,
+          "failed_requirements": [],
+          "detailed_feedback": [
+            "\u2713 No missing values in output",
+            "\u2713 No infinite values in output",
+            "\u2713 Correct train/test split ratio",
+            "\u2713 All features properly encoded as numeric"
+          ]
+        }
+      },
+      {
+        "trial_id": 8,
+        "success": false,
+        "feedback": "Error executing preprocessing function: object of type 'numpy.float64' has no len()",
+        "duration_seconds": 27.508117,
+        "timestamp": "2025-11-04T17:53:49.216704",
+        "submitted_answer": "import pandas as pd\nimport numpy as np\nfrom sklearn.model_selection import train_test_split\nfrom sklearn.preprocessing import StandardScaler, OneHotEncoder\nfrom sklearn.compose import ColumnTransformer\nfrom sklearn.pipeline import Pipeline\nfrom sklearn.impute import SimpleImputer\n\ndef preprocess_data(filepath, target_column, test_size=0.2, random_state=42):\n    \"\"\"\n    Comprehensive data preprocessing pipeline\n    \n    Args:\n        filepath (str): Path to the CSV file\n        target_column (str): Name of the target column\n        test_size (float): Proportion of test set (default 0.2)\n        random_state (int): Random seed for reproducibility\n    \n    Returns:\n        X_train, X_test, y_train, y_test (preprocessed datasets)\n    \"\"\"\n    try:\n        # 1. Load dataset\n        df = pd.read_csv(filepath)\n        \n        # Input validation\n        if target_column not in df.columns:\n            raise ValueError(f\"Target column '{target_column}' not found in dataset\")\n        \n        # Separate features and target\n        X = df.drop(columns=[target_column])\n        y = df[target_column]\n        \n        # Identify column types\n        numeric_features = X.select_dtypes(include=['int64', 'float64']).columns\n        categorical_features = X.select_dtypes(include=['object', 'category', 'bool']).columns\n        \n        # 2. SPLIT DATA FIRST to prevent data leakage\n        X_train, X_test, y_train, y_test = train_test_split(\n            X, y, \n            test_size=test_size, \n            random_state=random_state,\n            stratify=y  # Stratified sampling\n        )\n        \n        # 3. Create preprocessing pipeline with column transformer\n        preprocessor = ColumnTransformer(\n            transformers=[\n                # Numeric feature handling: impute missing values, then scale\n                ('num', Pipeline([\n                    ('imputer', SimpleImputer(strategy='median')),\n                    ('scaler', StandardScaler())\n                ]), numeric_features),\n                \n                # Categorical feature handling: impute missing values, then one-hot encode\n                ('cat', Pipeline([\n                    ('imputer', SimpleImputer(strategy='constant', fill_value='missing')),\n                    ('onehot', OneHotEncoder(\n                        sparse_output=False, \n                        drop='first',  # Avoid multicollinearity\n                        handle_unknown='ignore'\n                    ))\n                ]), categorical_features)\n            ],\n            remainder='drop'  # Drop any unspecified columns\n        )\n        \n        # 4. Fit preprocessor on training data ONLY\n        X_train_processed = preprocessor.fit_transform(X_train)\n        X_test_processed = preprocessor.transform(X_test)\n        \n        # 5. Validate output: No missing or infinite values\n        if (np.isnan(X_train_processed).any() or \n            np.isnan(X_test_processed).any() or \n            np.isinf(X_train_processed).any() or \n            np.isinf(X_test_processed).any()):\n            raise ValueError(\"Processed data contains NaN or infinite values\")\n        \n        return X_train_processed, X_test_processed, y_train, y_test\n    \n    except Exception as e:\n        print(f\"Preprocessing error: {e}\")\n        raise",
+        "detailed_results": {
+          "total_requirements": 9,
+          "passed_requirements": 4,
+          "failed_requirements": [],
+          "detailed_feedback": [
+            "\u2713 No missing values in output",
+            "\u2713 No infinite values in output",
+            "\u2713 Correct train/test split ratio",
+            "\u2713 All features properly encoded as numeric"
+          ]
+        }
+      },
+      {
+        "trial_id": 9,
+        "success": false,
+        "feedback": "Error executing preprocessing function: object of type 'numpy.float64' has no len()",
+        "duration_seconds": 30.438112,
+        "timestamp": "2025-11-04T17:54:16.753412",
+        "submitted_answer": "import pandas as pd\nimport numpy as np\nfrom sklearn.model_selection import train_test_split\nfrom sklearn.preprocessing import StandardScaler, OneHotEncoder\nfrom sklearn.impute import SimpleImputer\nfrom sklearn.compose import ColumnTransformer\nfrom sklearn.pipeline import Pipeline\n\ndef preprocess_data(filepath, target_column, test_size=0.2, random_state=42):\n    \"\"\"\n    Comprehensive data preprocessing function with multiple preprocessing steps\n    \n    Args:\n        filepath (str): Path to the CSV file\n        target_column (str): Name of the target variable column\n        test_size (float): Proportion of data to use for testing\n        random_state (int): Random seed for reproducibility\n    \n    Returns:\n        tuple: X_train, X_test, y_train, y_test preprocessed datasets\n    \"\"\"\n    try:\n        # 1. Load dataset\n        df = pd.read_csv(filepath)\n        \n        # Input validation\n        if target_column not in df.columns:\n            raise ValueError(f\"Target column '{target_column}' not found in dataset\")\n        \n        # Separate features and target\n        X = df.drop(columns=[target_column])\n        y = df[target_column]\n        \n        # Identify column types\n        numeric_features = X.select_dtypes(include=['int64', 'float64']).columns\n        categorical_features = X.select_dtypes(include=['object']).columns\n        \n        # 2. Stratified train-test split BEFORE preprocessing\n        X_train, X_test, y_train, y_test = train_test_split(\n            X, y, test_size=test_size, random_state=random_state, stratify=y\n        )\n        \n        # 3 & 4. Create preprocessing pipeline\n        preprocessor = ColumnTransformer(\n            transformers=[\n                ('num', Pipeline([\n                    ('imputer', SimpleImputer(strategy='median')),\n                    ('scaler', StandardScaler())\n                ]), numeric_features),\n                ('cat', Pipeline([\n                    ('imputer', SimpleImputer(strategy='most_frequent')),\n                    ('onehot', OneHotEncoder(sparse_output=False, drop='first'))\n                ]), categorical_features)\n            ],\n            remainder='drop'\n        )\n        \n        # 5. Fit preprocessor ONLY on training data\n        X_train_processed = preprocessor.fit_transform(X_train)\n        X_test_processed = preprocessor.transform(X_test)\n        \n        # 6. Verify no missing or infinite values\n        if (np.isnan(X_train_processed).any() or np.isinf(X_train_processed).any() or\n            np.isnan(X_test_processed).any() or np.isinf(X_test_processed).any()):\n            raise ValueError(\"Preprocessed data contains NaN or infinite values\")\n        \n        return X_train_processed, X_test_processed, y_train, y_test\n    \n    except Exception as e:\n        print(f\"Preprocessing error: {e}\")\n        raise",
+        "detailed_results": {
+          "total_requirements": 9,
+          "passed_requirements": 4,
+          "failed_requirements": [],
+          "detailed_feedback": [
+            "\u2713 No missing values in output",
+            "\u2713 No infinite values in output",
+            "\u2713 Correct train/test split ratio",
+            "\u2713 All features properly encoded as numeric"
+          ]
+        }
+      },
+      {
+        "trial_id": 10,
+        "success": false,
+        "feedback": "Error executing preprocessing function: object of type 'numpy.float64' has no len()",
+        "duration_seconds": 23.200967,
+        "timestamp": "2025-11-04T17:54:47.205292",
+        "submitted_answer": "import pandas as pd\nimport numpy as np\nfrom sklearn.model_selection import train_test_split\nfrom sklearn.preprocessing import StandardScaler, OneHotEncoder\nfrom sklearn.compose import ColumnTransformer\nfrom sklearn.pipeline import Pipeline\nfrom sklearn.impute import SimpleImputer\n\ndef preprocess_data(filepath, target_column, test_size=0.2, random_state=42):\n    \"\"\"\n    Comprehensive data preprocessing function with multiple validation steps.\n    \n    Args:\n        filepath (str): Path to the CSV file\n        target_column (str): Name of the target column\n        test_size (float, optional): Proportion of test set. Defaults to 0.2.\n        random_state (int, optional): Random seed for reproducibility. Defaults to 42.\n    \n    Returns:\n        tuple: Preprocessed X_train, X_test, y_train, y_test\n    \"\"\"\n    try:\n        # 1. Load dataset\n        df = pd.read_csv(filepath)\n        \n        # Input validation\n        if target_column not in df.columns:\n            raise ValueError(f\"Target column '{target_column}' not found in dataset\")\n        \n        # Separate features and target\n        X = df.drop(columns=[target_column])\n        y = df[target_column]\n        \n        # Identify column types\n        numeric_columns = X.select_dtypes(include=['int64', 'float64']).columns\n        categorical_columns = X.select_dtypes(include=['object', 'category', 'bool']).columns\n        \n        # 2. Handle missing values & 3. Preprocessing pipeline\n        preprocessor = ColumnTransformer(\n            transformers=[\n                ('num', Pipeline([\n                    ('imputer', SimpleImputer(strategy='median')),\n                    ('scaler', StandardScaler())\n                ]), numeric_columns),\n                ('cat', Pipeline([\n                    ('imputer', SimpleImputer(strategy='most_frequent')),\n                    ('onehot', OneHotEncoder(sparse_output=False, drop='first'))\n                ]), categorical_columns)\n            ])\n        \n        # 5 & 6. Stratified train-test split\n        X_train, X_test, y_train, y_test = train_test_split(\n            X, y, \n            test_size=test_size, \n            stratify=y, \n            random_state=random_state\n        )\n        \n        # 4. Fit preprocessor on training data and transform both sets\n        # NO DATA LEAKAGE: Fit only on training data\n        X_train_processed = preprocessor.fit_transform(X_train)\n        X_test_processed = preprocessor.transform(X_test)\n        \n        # 7 & 8. Final validation\n        def validate_processed_data(X):\n            if np.any(np.isnan(X)):\n                raise ValueError(\"NaN values present after preprocessing\")\n            if np.any(np.isinf(X)):\n                raise ValueError(\"Infinite values present after preprocessing\")\n            return True\n        \n        validate_processed_data(X_train_processed)\n        validate_processed_data(X_test_processed)\n        \n        return X_train_processed, X_test_processed, y_train, y_test\n    \n    except Exception as e:\n        print(f\"Preprocessing error: {e}\")\n        raise",
+        "detailed_results": {
+          "total_requirements": 9,
+          "passed_requirements": 4,
+          "failed_requirements": [],
+          "detailed_feedback": [
+            "\u2713 No missing values in output",
+            "\u2713 No infinite values in output",
+            "\u2713 Correct train/test split ratio",
+            "\u2713 All features properly encoded as numeric"
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "timestamp": "2025-11-04T18:02:08.768672",
+    "dataset_used": "task/data/ml_dataset.csv",
+    "total_trials": 10,
+    "pass_rate": 20.0,
+    "duration_seconds": 251.82303,
+    "target_range": [
+      10,
+      40
+    ],
+    "trials": [
+      {
+        "trial_id": 1,
+        "success": false,
+        "feedback": "Error executing preprocessing function: object of type 'numpy.float64' has no len()",
+        "duration_seconds": 17.212061,
+        "timestamp": "2025-11-04T17:57:56.942744",
+        "submitted_answer": "import pandas as pd\nimport numpy as np\nfrom sklearn.model_selection import train_test_split\nfrom sklearn.preprocessing import StandardScaler, OneHotEncoder\nfrom sklearn.impute import SimpleImputer\nfrom sklearn.compose import ColumnTransformer\nfrom sklearn.pipeline import Pipeline\n\ndef preprocess_data(\n    filepath, \n    target_column, \n    test_size=0.2, \n    random_state=42\n):\n    \"\"\"\n    Comprehensive data preprocessing function for ML pipeline\n    \n    Parameters:\n    - filepath (str): Path to the CSV file\n    - target_column (str): Name of the target variable column\n    - test_size (float): Proportion of dataset to include in test split\n    - random_state (int): Controls random state for reproducibility\n    \n    Returns:\n    - X_train (np.ndarray): Processed training features\n    - X_test (np.ndarray): Processed testing features\n    - y_train (np.ndarray): Training target values\n    - y_test (np.ndarray): Testing target values\n    \"\"\"\n    try:\n        # Read the dataset\n        df = pd.read_csv(filepath)\n        \n        # Input validation\n        if target_column not in df.columns:\n            raise ValueError(f\"Target column '{target_column}' not found in dataset\")\n        \n        if df.empty:\n            raise ValueError(\"Dataset is empty\")\n        \n        # Separate features and target\n        X = df.drop(columns=[target_column])\n        y = df[target_column]\n        \n        # Identify column types\n        numeric_features = X.select_dtypes(include=['int64', 'float64']).columns\n        categorical_features = X.select_dtypes(include=['object', 'category', 'bool']).columns\n        \n        # Preprocessing steps\n        numeric_transformer = Pipeline(steps=[\n            ('imputer', SimpleImputer(strategy='median')),\n            ('scaler', StandardScaler())\n        ])\n        \n        categorical_transformer = Pipeline(steps=[\n            ('imputer', SimpleImputer(strategy='most_frequent')),\n            ('onehot', OneHotEncoder(\n                sparse_output=False, \n                handle_unknown='ignore', \n                drop='first'\n            ))\n        ])\n        \n        # Create preprocessor\n        preprocessor = ColumnTransformer(\n            transformers=[\n                ('num', numeric_transformer, numeric_features),\n                ('cat', categorical_transformer, categorical_features)\n            ])\n        \n        # Stratified train-test split\n        X_train, X_test, y_train, y_test = train_test_split(\n            X, y, \n            test_size=test_size, \n            random_state=random_state, \n            stratify=y\n        )\n        \n        # Fit preprocessor only on training data\n        preprocessor.fit(X_train)\n        \n        # Transform training and testing data\n        X_train_processed = preprocessor.transform(X_train)\n        X_test_processed = preprocessor.transform(X_test)\n        \n        # Final validation checks\n        if np.any(np.isnan(X_train_processed)) or np.any(np.isinf(X_train_processed)):\n            raise ValueError(\"NaN or Inf values detected after preprocessing\")\n        \n        return X_train_processed, X_test_processed, y_train, y_test\n    \n    except Exception as e:\n        print(f\"Preprocessing error: {e}\")\n        raise",
+        "detailed_results": {
+          "total_requirements": 9,
+          "passed_requirements": 4,
+          "failed_requirements": [],
+          "detailed_feedback": [
+            "\u2713 No missing values in output",
+            "\u2713 No infinite values in output",
+            "\u2713 Correct train/test split ratio",
+            "\u2713 All features properly encoded as numeric"
+          ]
+        }
+      },
+      {
+        "trial_id": 2,
+        "success": false,
+        "feedback": "Error executing preprocessing function: object of type 'numpy.float64' has no len()",
+        "duration_seconds": 28.432469,
+        "timestamp": "2025-11-04T17:58:14.229269",
+        "submitted_answer": "import pandas as pd\nimport numpy as np\nfrom sklearn.model_selection import train_test_split\nfrom sklearn.preprocessing import StandardScaler, OneHotEncoder\nfrom sklearn.impute import SimpleImputer\nfrom sklearn.compose import ColumnTransformer\nfrom sklearn.pipeline import Pipeline\n\ndef preprocess_data(filepath, target_column, test_size=0.2, random_state=42):\n    \"\"\"\n    Comprehensive data preprocessing function for mixed-type datasets.\n    \n    Parameters:\n    -----------\n    filepath : str\n        Path to the CSV file\n    target_column : str\n        Name of the target/label column\n    test_size : float, optional (default=0.2)\n        Proportion of the dataset to include in the test split\n    random_state : int, optional (default=42)\n        Controls the shuffling applied to the data before splitting\n    \n    Returns:\n    --------\n    X_train, X_test, y_train, y_test : preprocessed train and test sets\n    \"\"\"\n    try:\n        # 1. Load the dataset\n        df = pd.read_csv(filepath)\n        \n        # Validate input\n        if target_column not in df.columns:\n            raise ValueError(f\"Target column '{target_column}' not found in dataset\")\n        \n        # Separate features and target\n        X = df.drop(columns=[target_column])\n        y = df[target_column]\n        \n        # Identify column types\n        numeric_features = X.select_dtypes(include=['int64', 'float64']).columns\n        categorical_features = X.select_dtypes(include=['object', 'category', 'bool']).columns\n        \n        # 2. Handle missing values and convert data types\n        # Numeric imputation with median\n        # Categorical imputation with most frequent value\n        \n        # 3. Create preprocessing pipelines\n        numeric_transformer = Pipeline(steps=[\n            ('imputer', SimpleImputer(strategy='median')),\n            ('scaler', StandardScaler())\n        ])\n        \n        categorical_transformer = Pipeline(steps=[\n            ('imputer', SimpleImputer(strategy='most_frequent')),\n            ('onehot', OneHotEncoder(sparse_output=False, drop='first', handle_unknown='ignore'))\n        ])\n        \n        # 4. Combine preprocessing steps\n        preprocessor = ColumnTransformer(\n            transformers=[\n                ('num', numeric_transformer, numeric_features),\n                ('cat', categorical_transformer, categorical_features)\n            ])\n        \n        # 5. Split data with stratification (considering target column)\n        X_train, X_test, y_train, y_test = train_test_split(\n            X, y, \n            test_size=test_size, \n            random_state=random_state, \n            stratify=y\n        )\n        \n        # 6. Fit preprocessing on training data only\n        X_train_processed = preprocessor.fit_transform(X_train)\n        X_test_processed = preprocessor.transform(X_test)\n        \n        # 7. Validate processed data\n        if (np.isnan(X_train_processed).any() or \n            np.isnan(X_test_processed).any() or \n            np.isinf(X_train_processed).any() or \n            np.isinf(X_test_processed).any()):\n            raise ValueError(\"Processed data contains NaN or infinite values\")\n        \n        return X_train_processed, X_test_processed, y_train, y_test\n    \n    except Exception as e:\n        print(f\"Error in data preprocessing: {e}\")\n        raise",
+        "detailed_results": {
+          "total_requirements": 9,
+          "passed_requirements": 4,
+          "failed_requirements": [],
+          "detailed_feedback": [
+            "\u2713 No missing values in output",
+            "\u2713 No infinite values in output",
+            "\u2713 Correct train/test split ratio",
+            "\u2713 All features properly encoded as numeric"
+          ]
+        }
+      },
+      {
+        "trial_id": 3,
+        "success": false,
+        "feedback": "Error executing preprocessing function: object of type 'numpy.float64' has no len()",
+        "duration_seconds": 19.692935,
+        "timestamp": "2025-11-04T17:58:42.677370",
+        "submitted_answer": "import pandas as pd\nimport numpy as np\nfrom sklearn.model_selection import train_test_split\nfrom sklearn.preprocessing import StandardScaler, OneHotEncoder\nfrom sklearn.compose import ColumnTransformer\nfrom sklearn.pipeline import Pipeline\nfrom sklearn.impute import SimpleImputer\n\ndef preprocess_data(filepath, target_column, test_size=0.2, random_state=42):\n    \"\"\"\n    Comprehensive data preprocessing function with multiple validation steps.\n    \n    Args:\n        filepath (str): Path to CSV file\n        target_column (str): Name of the target variable column\n        test_size (float): Proportion of test set (default 0.2)\n        random_state (int): Random seed for reproducibility\n    \n    Returns:\n        X_train, X_test, y_train, y_test (preprocessed datasets)\n    \"\"\"\n    try:\n        # 1. Load dataset with error handling\n        df = pd.read_csv(filepath)\n        \n        if target_column not in df.columns:\n            raise ValueError(f\"Target column '{target_column}' not found in dataset\")\n        \n        # Separate features and target\n        X = df.drop(columns=[target_column])\n        y = df[target_column]\n        \n        # 2. Identify column types\n        numeric_features = X.select_dtypes(include=['int64', 'float64']).columns\n        categorical_features = X.select_dtypes(include=['object', 'category', 'bool']).columns\n        \n        # 3. Stratified Train-Test Split (BEFORE preprocessing to avoid leakage)\n        X_train, X_test, y_train, y_test = train_test_split(\n            X, y, \n            test_size=test_size, \n            random_state=random_state, \n            stratify=y\n        )\n        \n        # 4. Create preprocessing pipelines\n        numeric_transformer = Pipeline(steps=[\n            ('imputer', SimpleImputer(strategy='median')),  # Handle missing numeric values\n            ('scaler', StandardScaler())  # Standardize numeric features\n        ])\n        \n        categorical_transformer = Pipeline(steps=[\n            ('imputer', SimpleImputer(strategy='constant', fill_value='missing')),  # Handle missing categorical values\n            ('onehot', OneHotEncoder(sparse_output=False, drop='first'))  # One-hot encode with multicollinearity prevention\n        ])\n        \n        # 5. Combine preprocessing steps\n        preprocessor = ColumnTransformer(\n            transformers=[\n                ('num', numeric_transformer, numeric_features),\n                ('cat', categorical_transformer, categorical_features)\n            ])\n        \n        # 6. Fit preprocessor on TRAINING data only\n        X_train_processed = preprocessor.fit_transform(X_train)\n        X_test_processed = preprocessor.transform(X_test)\n        \n        # 7. Validate processed data\n        if np.any(np.isinf(X_train_processed)) or np.any(np.isinf(X_test_processed)):\n            raise ValueError(\"Infinite values detected after preprocessing\")\n        \n        if np.any(np.isnan(X_train_processed)) or np.any(np.isnan(X_test_processed)):\n            raise ValueError(\"NaN values detected after preprocessing\")\n        \n        return X_train_processed, X_test_processed, y_train, y_test\n    \n    except Exception as e:\n        print(f\"Preprocessing Error: {e}\")\n        raise",
+        "detailed_results": {
+          "total_requirements": 9,
+          "passed_requirements": 4,
+          "failed_requirements": [],
+          "detailed_feedback": [
+            "\u2713 No missing values in output",
+            "\u2713 No infinite values in output",
+            "\u2713 Correct train/test split ratio",
+            "\u2713 All features properly encoded as numeric"
+          ]
+        }
+      },
+      {
+        "trial_id": 4,
+        "success": false,
+        "feedback": "Error executing preprocessing function: object of type 'numpy.float64' has no len()",
+        "duration_seconds": 29.234865,
+        "timestamp": "2025-11-04T17:59:02.385854",
+        "submitted_answer": "import pandas as pd\nimport numpy as np\nfrom sklearn.model_selection import train_test_split\nfrom sklearn.preprocessing import OneHotEncoder, StandardScaler\nfrom sklearn.impute import SimpleImputer\nfrom sklearn.compose import ColumnTransformer\nfrom sklearn.pipeline import Pipeline\n\ndef preprocess_data(filepath, target_column, test_size=0.2, random_state=42):\n    \"\"\"\n    Comprehensive data preprocessing function with robust error handling\n    \n    Args:\n        filepath (str): Path to CSV file\n        target_column (str): Name of the target variable column\n        test_size (float): Proportion of data for testing\n        random_state (int): Seed for reproducibility\n    \n    Returns:\n        X_train, X_test, y_train, y_test (processed datasets)\n    \"\"\"\n    try:\n        # 1. Load dataset with error handling\n        try:\n            df = pd.read_csv(filepath)\n        except (FileNotFoundError, pd.errors.EmptyDataError) as e:\n            raise ValueError(f\"Error loading dataset: {e}\")\n        \n        # Validate target column exists\n        if target_column not in df.columns:\n            raise ValueError(f\"Target column '{target_column}' not found in dataset\")\n        \n        # Separate features and target\n        X = df.drop(columns=[target_column])\n        y = df[target_column]\n        \n        # Identify column types\n        numeric_features = X.select_dtypes(include=['int64', 'float64']).columns\n        categorical_features = X.select_dtypes(include=['object', 'category', 'bool']).columns\n        \n        # 2. Stratified Train-Test Split (BEFORE preprocessing to prevent data leakage)\n        X_train, X_test, y_train, y_test = train_test_split(\n            X, y, \n            test_size=test_size, \n            stratify=y, \n            random_state=random_state\n        )\n        \n        # 3. Create preprocessing pipelines\n        numeric_transformer = Pipeline(steps=[\n            ('imputer', SimpleImputer(strategy='median')),  # Handle missing numeric values\n            ('scaler', StandardScaler())  # Normalize numeric features\n        ])\n        \n        categorical_transformer = Pipeline(steps=[\n            ('imputer', SimpleImputer(strategy='most_frequent')),  # Handle missing categorical values\n            ('onehot', OneHotEncoder(drop='first', sparse_output=False))  # One-hot encoding\n        ])\n        \n        # 4. Combine preprocessing steps\n        preprocessor = ColumnTransformer(\n            transformers=[\n                ('num', numeric_transformer, numeric_features),\n                ('cat', categorical_transformer, categorical_features)\n            ])\n        \n        # 5. Fit preprocessor only on training data\n        X_train_processed = preprocessor.fit_transform(X_train)\n        X_test_processed = preprocessor.transform(X_test)\n        \n        # 6. Validate processed data\n        def validate_processed_data(data):\n            if np.isnan(data).any() or np.isinf(data).any():\n                raise ValueError(\"Processed data contains NaN or infinite values\")\n        \n        validate_processed_data(X_train_processed)\n        validate_processed_data(X_test_processed)\n        \n        return X_train_processed, X_test_processed, y_train, y_test\n    \n    except Exception as e:\n        print(f\"Preprocessing error: {e}\")\n        raise",
+        "detailed_results": {
+          "total_requirements": 9,
+          "passed_requirements": 4,
+          "failed_requirements": [],
+          "detailed_feedback": [
+            "\u2713 No missing values in output",
+            "\u2713 No infinite values in output",
+            "\u2713 Correct train/test split ratio",
+            "\u2713 All features properly encoded as numeric"
+          ]
+        }
+      },
+      {
+        "trial_id": 5,
+        "success": true,
+        "feedback": "Passed 8/9 requirements - Good job!",
+        "duration_seconds": 30.602478,
+        "timestamp": "2025-11-04T17:59:31.638572",
+        "submitted_answer": "import pandas as pd\nimport numpy as np\nfrom sklearn.model_selection import train_test_split\nfrom sklearn.preprocessing import StandardScaler, OneHotEncoder\nfrom sklearn.impute import SimpleImputer\nfrom sklearn.compose import ColumnTransformer\nfrom sklearn.pipeline import Pipeline\n\ndef preprocess_data(filepath, target_column, test_size=0.2, random_state=42):\n    \"\"\"\n    Comprehensive data preprocessing function for machine learning.\n    \n    Args:\n        filepath (str): Path to CSV dataset\n        target_column (str): Name of the target variable column\n        test_size (float): Proportion of data for testing\n        random_state (int): Random seed for reproducibility\n    \n    Returns:\n        X_train, X_test, y_train, y_test (preprocessed datasets)\n    \"\"\"\n    try:\n        # 1. Load dataset\n        df = pd.read_csv(filepath)\n        \n        # Validate input\n        if target_column not in df.columns:\n            raise ValueError(f\"Target column '{target_column}' not found in dataset\")\n        \n        # Separate features and target\n        X = df.drop(columns=[target_column])\n        y = df[target_column]\n        \n        # Identify column types\n        numeric_features = X.select_dtypes(include=['int64', 'float64']).columns\n        categorical_features = X.select_dtypes(include=['object', 'category', 'bool']).columns\n        \n        # 2. Stratified Train-Test Split (BEFORE preprocessing to prevent data leakage)\n        X_train, X_test, y_train, y_test = train_test_split(\n            X, y, \n            test_size=test_size, \n            random_state=random_state, \n            stratify=y\n        )\n        \n        # 3. Preprocessing Pipeline with ColumnTransformer\n        preprocessor = ColumnTransformer(\n            transformers=[\n                # Numeric features: impute with median, then standardize\n                ('num', Pipeline([\n                    ('imputer', SimpleImputer(strategy='median')),\n                    ('scaler', StandardScaler())\n                ]), numeric_features),\n                \n                # Categorical features: impute with most frequent, then one-hot encode\n                ('cat', Pipeline([\n                    ('imputer', SimpleImputer(strategy='most_frequent')),\n                    ('onehot', OneHotEncoder(sparse_output=False, drop='first'))\n                ]), categorical_features)\n            ],\n            remainder='drop'  # Drop any columns not specified\n        )\n        \n        # 4. Fit preprocessor on training data ONLY (prevent data leakage)\n        X_train_processed = preprocessor.fit_transform(X_train)\n        X_test_processed = preprocessor.transform(X_test)\n        \n        # 5. Convert back to DataFrame for better interpretability\n        feature_names = (\n            list(numeric_features) + \n            list(preprocessor.named_transformers_['cat']['onehot'].get_feature_names_out(categorical_features))\n        )\n        \n        X_train_processed = pd.DataFrame(X_train_processed, columns=feature_names, index=X_train.index)\n        X_test_processed = pd.DataFrame(X_test_processed, columns=feature_names, index=X_test.index)\n        \n        # 6. Validate processed data\n        if (X_train_processed.isnull().sum().any() or \n            X_test_processed.isnull().sum().any() or \n            np.isinf(X_train_processed).any().any() or \n            np.isinf(X_test_processed).any().any()):\n            raise ValueError(\"Processed data contains NaN or infinite values\")\n        \n        return X_train_processed, X_test_processed, y_train, y_test\n    \n    except Exception as e:\n        print(f\"Preprocessing Error: {e}\")\n        raise",
+        "detailed_results": {
+          "total_requirements": 9,
+          "passed_requirements": 8,
+          "failed_requirements": [
+            "Features not properly normalized"
+          ],
+          "detailed_feedback": [
+            "\u2713 No missing values in output",
+            "\u2713 No infinite values in output",
+            "\u2713 Correct train/test split ratio",
+            "\u2713 All features properly encoded as numeric",
+            "\u2717 Only 5/14 features normalized",
+            "\u2713 Code suggests proper fit/transform usage or pipeline construction",
+            "\u2713 Categorical variables handled (feature count increased)",
+            "\u2713 Target distribution preserved (stratify used and check passed)",
+            "\u2713 Code includes input validation or error handling"
+          ]
+        }
+      },
+      {
+        "trial_id": 6,
+        "success": false,
+        "feedback": "Error executing preprocessing function: object of type 'numpy.float64' has no len()",
+        "duration_seconds": 31.626231,
+        "timestamp": "2025-11-04T18:00:02.263368",
+        "submitted_answer": "import pandas as pd\nimport numpy as np\nfrom sklearn.model_selection import train_test_split\nfrom sklearn.preprocessing import StandardScaler, OneHotEncoder\nfrom sklearn.impute import SimpleImputer\nfrom sklearn.compose import ColumnTransformer\nfrom sklearn.pipeline import Pipeline\n\ndef preprocess_data(filepath, target_column, test_size=0.2, random_state=42):\n    \"\"\"\n    Preprocesses dataset with comprehensive handling of mixed data types.\n    \n    Args:\n        filepath (str): Path to CSV file\n        target_column (str): Name of target/label column\n        test_size (float): Proportion of test set\n        random_state (int): Random seed for reproducibility\n    \n    Returns:\n        tuple: (X_train, X_test, y_train, y_test)\n    \"\"\"\n    try:\n        # Load dataset\n        df = pd.read_csv(filepath)\n        \n        # Validate input\n        if target_column not in df.columns:\n            raise ValueError(f\"Target column '{target_column}' not found in dataset\")\n        \n        # Separate features and target\n        X = df.drop(columns=[target_column])\n        y = df[target_column]\n        \n        # Identify column types\n        numeric_features = X.select_dtypes(include=['int64', 'float64']).columns\n        categorical_features = X.select_dtypes(include=['object', 'category', 'bool']).columns\n        \n        # Create preprocessing steps for numeric and categorical features\n        numeric_transformer = Pipeline(steps=[\n            ('imputer', SimpleImputer(strategy='median')),\n            ('scaler', StandardScaler())\n        ])\n        \n        categorical_transformer = Pipeline(steps=[\n            ('imputer', SimpleImputer(strategy='most_frequent')),\n            ('onehot', OneHotEncoder(sparse_output=False, drop='first', handle_unknown='ignore'))\n        ])\n        \n        # Combine preprocessing steps\n        preprocessor = ColumnTransformer(\n            transformers=[\n                ('num', numeric_transformer, numeric_features),\n                ('cat', categorical_transformer, categorical_features)\n            ])\n        \n        # Stratified train-test split\n        X_train, X_test, y_train, y_test = train_test_split(\n            X, y, \n            test_size=test_size, \n            stratify=y, \n            random_state=random_state\n        )\n        \n        # Fit preprocessor on training data and transform both train and test\n        X_train_processed = preprocessor.fit_transform(X_train)\n        X_test_processed = preprocessor.transform(X_test)\n        \n        # Final validation\n        if (np.isnan(X_train_processed).any() or \n            np.isnan(X_test_processed).any() or \n            np.isinf(X_train_processed).any() or \n            np.isinf(X_test_processed).any()):\n            raise ValueError(\"Processed data contains NaN or infinite values\")\n        \n        return X_train_processed, X_test_processed, y_train, y_test\n    \n    except Exception as e:\n        print(f\"Error in data preprocessing: {e}\")\n        raise",
+        "detailed_results": {
+          "total_requirements": 9,
+          "passed_requirements": 4,
+          "failed_requirements": [],
+          "detailed_feedback": [
+            "\u2713 No missing values in output",
+            "\u2713 No infinite values in output",
+            "\u2713 Correct train/test split ratio",
+            "\u2713 All features properly encoded as numeric"
+          ]
+        }
+      },
+      {
+        "trial_id": 7,
+        "success": false,
+        "feedback": "Error executing preprocessing function: object of type 'numpy.float64' has no len()",
+        "duration_seconds": 16.819705,
+        "timestamp": "2025-11-04T18:00:33.905722",
+        "submitted_answer": "import pandas as pd\nimport numpy as np\nfrom sklearn.model_selection import train_test_split\nfrom sklearn.preprocessing import StandardScaler, OneHotEncoder\nfrom sklearn.compose import ColumnTransformer\nfrom sklearn.pipeline import Pipeline\nfrom sklearn.impute import SimpleImputer\n\ndef preprocess_data(filepath, target_column, test_size=0.2, random_state=42):\n    \"\"\"\n    Comprehensive data preprocessing function for ML model training.\n    \n    Args:\n        filepath (str): Path to the input CSV file\n        target_column (str): Name of the target/label column\n        test_size (float): Proportion of data to use for testing (default 0.2)\n        random_state (int): Seed for reproducibility (default 42)\n    \n    Returns:\n        tuple: X_train, X_test, y_train, y_test (preprocessed data)\n    \"\"\"\n    try:\n        # 1. Load the dataset\n        df = pd.read_csv(filepath)\n        \n        # Input validation\n        if target_column not in df.columns:\n            raise ValueError(f\"Target column '{target_column}' not found in the dataset\")\n        \n        # Separate features and target\n        X = df.drop(columns=[target_column])\n        y = df[target_column]\n        \n        # Identify column types\n        numeric_features = X.select_dtypes(include=['int64', 'float64']).columns\n        categorical_features = X.select_dtypes(include=['object', 'category', 'bool']).columns\n        \n        # 2. Split data BEFORE preprocessing to prevent data leakage\n        X_train, X_test, y_train, y_test = train_test_split(\n            X, y, \n            test_size=test_size, \n            random_state=random_state, \n            stratify=y  # Stratified sampling\n        )\n        \n        # 3 & 4. Create preprocessing pipelines for numeric and categorical data\n        numeric_transformer = Pipeline(steps=[\n            ('imputer', SimpleImputer(strategy='median')),  # Handle missing numeric values\n            ('scaler', StandardScaler())  # Normalize numeric features\n        ])\n        \n        categorical_transformer = Pipeline(steps=[\n            ('imputer', SimpleImputer(strategy='constant', fill_value='missing')),  # Handle missing categorical values\n            ('onehot', OneHotEncoder(\n                sparse_output=False,  # Return dense array\n                handle_unknown='ignore',  # Handle unseen categories\n                drop='first'  # Avoid multicollinearity\n            ))\n        ])\n        \n        # Combine preprocessing steps\n        preprocessor = ColumnTransformer(\n            transformers=[\n                ('num', numeric_transformer, numeric_features),\n                ('cat', categorical_transformer, categorical_features)\n            ])\n        \n        # Fit on training data and transform both train and test sets\n        X_train_processed = preprocessor.fit_transform(X_train)\n        X_test_processed = preprocessor.transform(X_test)\n        \n        # 5. Ensure no missing or infinite values\n        X_train_processed = np.nan_to_num(X_train_processed, nan=0.0, posinf=0.0, neginf=0.0)\n        X_test_processed = np.nan_to_num(X_test_processed, nan=0.0, posinf=0.0, neginf=0.0)\n        \n        return X_train_processed, X_test_processed, y_train, y_test\n    \n    except Exception as e:\n        print(f\"Error in data preprocessing: {e}\")\n        raise",
+        "detailed_results": {
+          "total_requirements": 9,
+          "passed_requirements": 4,
+          "failed_requirements": [],
+          "detailed_feedback": [
+            "\u2713 No missing values in output",
+            "\u2713 No infinite values in output",
+            "\u2713 Correct train/test split ratio",
+            "\u2713 All features properly encoded as numeric"
+          ]
+        }
+      },
+      {
+        "trial_id": 8,
+        "success": true,
+        "feedback": "Passed 8/9 requirements - Good job!",
+        "duration_seconds": 37.316127,
+        "timestamp": "2025-11-04T18:00:50.743295",
+        "submitted_answer": "import pandas as pd\nimport numpy as np\nfrom sklearn.model_selection import train_test_split\nfrom sklearn.preprocessing import StandardScaler, OneHotEncoder\nfrom sklearn.compose import ColumnTransformer\nfrom sklearn.impute import SimpleImputer\nfrom sklearn.pipeline import Pipeline\n\ndef preprocess_data(filepath, target_column, test_size=0.2, random_state=42):\n    \"\"\"\n    Preprocess ML dataset with comprehensive handling of mixed data types.\n    \n    Args:\n        filepath (str): Path to CSV dataset\n        target_column (str): Name of the target variable column\n        test_size (float): Proportion of test set (default 0.2)\n        random_state (int): Random seed for reproducibility\n    \n    Returns:\n        tuple: X_train, X_test, y_train, y_test (preprocessed datasets)\n    \"\"\"\n    try:\n        # 1. Load dataset\n        df = pd.read_csv(filepath)\n        \n        # Input validation\n        if target_column not in df.columns:\n            raise ValueError(f\"Target column '{target_column}' not found in dataset\")\n        \n        # Separate features and target\n        X = df.drop(columns=[target_column])\n        y = df[target_column]\n        \n        # Identify column types\n        numeric_features = X.select_dtypes(include=['int64', 'float64']).columns\n        categorical_features = X.select_dtypes(include=['object', 'category', 'bool']).columns\n        \n        # 2. Stratified Train-Test Split (BEFORE preprocessing to prevent data leakage)\n        X_train, X_test, y_train, y_test = train_test_split(\n            X, y, \n            test_size=test_size, \n            random_state=random_state, \n            stratify=y\n        )\n        \n        # 3. Create preprocessing pipelines\n        numeric_transformer = Pipeline(steps=[\n            ('imputer', SimpleImputer(strategy='median')),  # Handle missing numeric values\n            ('scaler', StandardScaler())  # Normalize numeric features\n        ])\n        \n        categorical_transformer = Pipeline(steps=[\n            ('imputer', SimpleImputer(strategy='most_frequent')),  # Handle missing categorical values\n            ('onehot', OneHotEncoder(sparse_output=False, drop='first'))  # One-hot encode, avoid multicollinearity\n        ])\n        \n        # 4. Combine preprocessing steps\n        preprocessor = ColumnTransformer(\n            transformers=[\n                ('num', numeric_transformer, numeric_features),\n                ('cat', categorical_transformer, categorical_features)\n            ])\n        \n        # 5. Fit preprocessor on training data ONLY (preventing data leakage)\n        X_train_processed = preprocessor.fit_transform(X_train)\n        X_test_processed = preprocessor.transform(X_test)\n        \n        # 6. Get feature names after preprocessing\n        feature_names = (\n            list(numeric_features) + \n            list(preprocessor.named_transformers_['cat'].named_steps['onehot'].get_feature_names_out(categorical_features))\n        )\n        \n        # 7. Convert to DataFrames for better interpretability\n        X_train_processed = pd.DataFrame(X_train_processed, columns=feature_names, index=X_train.index)\n        X_test_processed = pd.DataFrame(X_test_processed, columns=feature_names, index=X_test.index)\n        \n        # 8. Final validation: Check for any remaining NaN or infinite values\n        if X_train_processed.isnull().any().any() or X_test_processed.isnull().any().any():\n            raise ValueError(\"Preprocessing failed: NaN values remain\")\n        \n        if np.isinf(X_train_processed).any().any() or np.isinf(X_test_processed).any().any():\n            raise ValueError(\"Preprocessing failed: Infinite values detected\")\n        \n        return X_train_processed, X_test_processed, y_train, y_test\n    \n    except Exception as e:\n        print(f\"Error in preprocessing: {e}\")\n        raise",
+        "detailed_results": {
+          "total_requirements": 9,
+          "passed_requirements": 8,
+          "failed_requirements": [
+            "Features not properly normalized"
+          ],
+          "detailed_feedback": [
+            "\u2713 No missing values in output",
+            "\u2713 No infinite values in output",
+            "\u2713 Correct train/test split ratio",
+            "\u2713 All features properly encoded as numeric",
+            "\u2717 Only 5/14 features normalized",
+            "\u2713 Code suggests proper fit/transform usage or pipeline construction",
+            "\u2713 Categorical variables handled (feature count increased)",
+            "\u2713 Target distribution preserved (stratify used and check passed)",
+            "\u2713 Code includes input validation or error handling"
+          ]
+        }
+      },
+      {
+        "trial_id": 9,
+        "success": false,
+        "feedback": "Error executing preprocessing function: object of type 'numpy.float64' has no len()",
+        "duration_seconds": 15.908753,
+        "timestamp": "2025-11-04T18:01:28.082126",
+        "submitted_answer": "import pandas as pd\nimport numpy as np\nfrom sklearn.model_selection import train_test_split\nfrom sklearn.preprocessing import StandardScaler, OneHotEncoder\nfrom sklearn.compose import ColumnTransformer\nfrom sklearn.pipeline import Pipeline\nfrom sklearn.impute import SimpleImputer\n\ndef preprocess_data(filepath, target_column, test_size=0.2, random_state=42):\n    \"\"\"\n    Comprehensive data preprocessing function for machine learning.\n    \n    Args:\n        filepath (str): Path to the CSV dataset\n        target_column (str): Name of the target/label column\n        test_size (float): Proportion of data for testing (default 0.2)\n        random_state (int): Random seed for reproducibility\n    \n    Returns:\n        tuple: X_train, X_test, y_train, y_test preprocessed datasets\n    \"\"\"\n    try:\n        # Load dataset\n        df = pd.read_csv(filepath)\n        \n        # Validate input\n        if target_column not in df.columns:\n            raise ValueError(f\"Target column '{target_column}' not found in dataset\")\n        \n        # Separate features and target\n        X = df.drop(columns=[target_column])\n        y = df[target_column]\n        \n        # Identify column types\n        numeric_features = X.select_dtypes(include=['int64', 'float64']).columns\n        categorical_features = X.select_dtypes(include=['object', 'category', 'bool']).columns\n        \n        # Stratified train-test split\n        X_train, X_test, y_train, y_test = train_test_split(\n            X, y, \n            test_size=test_size, \n            random_state=random_state, \n            stratify=y\n        )\n        \n        # Create preprocessing pipelines\n        numeric_transformer = Pipeline(steps=[\n            ('imputer', SimpleImputer(strategy='median')),  # Handle numeric missing values\n            ('scaler', StandardScaler())  # Normalize numeric features\n        ])\n        \n        categorical_transformer = Pipeline(steps=[\n            ('imputer', SimpleImputer(strategy='most_frequent')),  # Handle categorical missing values\n            ('onehot', OneHotEncoder(sparse_output=False, drop='first'))  # Encode categorical vars\n        ])\n        \n        # Combine preprocessing steps\n        preprocessor = ColumnTransformer(\n            transformers=[\n                ('num', numeric_transformer, numeric_features),\n                ('cat', categorical_transformer, categorical_features)\n            ])\n        \n        # Fit preprocessor on training data (prevents data leakage)\n        X_train_processed = preprocessor.fit_transform(X_train)\n        X_test_processed = preprocessor.transform(X_test)\n        \n        # Validate output\n        if np.any(np.isinf(X_train_processed)) or np.any(np.isinf(X_test_processed)):\n            raise ValueError(\"Infinite values detected after preprocessing\")\n        \n        return X_train_processed, X_test_processed, y_train, y_test\n    \n    except Exception as e:\n        print(f\"Preprocessing error: {e}\")\n        raise",
+        "detailed_results": {
+          "total_requirements": 9,
+          "passed_requirements": 4,
+          "failed_requirements": [],
+          "detailed_feedback": [
+            "\u2713 No missing values in output",
+            "\u2713 No infinite values in output",
+            "\u2713 Correct train/test split ratio",
+            "\u2713 All features properly encoded as numeric"
+          ]
+        }
+      },
+      {
+        "trial_id": 10,
+        "success": false,
+        "feedback": "Error executing preprocessing function: object of type 'numpy.float64' has no len()",
+        "duration_seconds": 24.732401,
+        "timestamp": "2025-11-04T18:01:44.013635",
+        "submitted_answer": "import pandas as pd\nimport numpy as np\nfrom sklearn.model_selection import train_test_split\nfrom sklearn.preprocessing import StandardScaler, OneHotEncoder\nfrom sklearn.impute import SimpleImputer\nfrom sklearn.compose import ColumnTransformer\nfrom sklearn.pipeline import Pipeline\n\ndef preprocess_data(filepath, target_column, test_size=0.2, random_state=42):\n    \"\"\"\n    Preprocess data with comprehensive handling of mixed data types\n    \n    Args:\n        filepath (str): Path to the CSV file\n        target_column (str): Name of the target column\n        test_size (float): Proportion of test data\n        random_state (int): Random seed for reproducibility\n    \n    Returns:\n        X_train, X_test, y_train, y_test (numpy arrays)\n    \"\"\"\n    try:\n        # Load the dataset\n        df = pd.read_csv(filepath)\n        \n        # Validate input\n        if target_column not in df.columns:\n            raise ValueError(f\"Target column '{target_column}' not found in dataset\")\n        \n        # Separate features and target\n        X = df.drop(columns=[target_column])\n        y = df[target_column]\n        \n        # Identify column types\n        numeric_features = X.select_dtypes(include=['int64', 'float64']).columns\n        categorical_features = X.select_dtypes(include=['object', 'category', 'bool']).columns\n        \n        # Stratified train-test split to preserve target distribution\n        X_train, X_test, y_train, y_test = train_test_split(\n            X, y, \n            test_size=test_size, \n            random_state=random_state, \n            stratify=y\n        )\n        \n        # Create preprocessing pipelines\n        numeric_transformer = Pipeline(steps=[\n            ('imputer', SimpleImputer(strategy='median')),  # Handle missing numeric values\n            ('scaler', StandardScaler())  # Normalize numeric features\n        ])\n        \n        categorical_transformer = Pipeline(steps=[\n            ('imputer', SimpleImputer(strategy='most_frequent')),  # Handle missing categorical values\n            ('onehot', OneHotEncoder(\n                sparse_output=False, \n                drop='first',  # Avoid multicollinearity\n                handle_unknown='ignore'  # Robust to unseen categories\n            ))\n        ])\n        \n        # Combine preprocessors\n        preprocessor = ColumnTransformer(\n            transformers=[\n                ('num', numeric_transformer, numeric_features),\n                ('cat', categorical_transformer, categorical_features)\n            ])\n        \n        # Fit preprocessor on training data only to prevent leakage\n        X_train_processed = preprocessor.fit_transform(X_train)\n        X_test_processed = preprocessor.transform(X_test)\n        \n        # Final validation\n        if (np.any(np.isinf(X_train_processed)) or np.any(np.isinf(X_test_processed)) or\n            np.any(np.isnan(X_train_processed)) or np.any(np.isnan(X_test_processed))):\n            raise ValueError(\"Preprocessing resulted in infinite or NaN values\")\n        \n        return X_train_processed, X_test_processed, y_train, y_test\n    \n    except Exception as e:\n        print(f\"Error in data preprocessing: {e}\")\n        raise",
+        "detailed_results": {
+          "total_requirements": 9,
+          "passed_requirements": 4,
+          "failed_requirements": [],
+          "detailed_feedback": [
+            "\u2713 No missing values in output",
+            "\u2713 No infinite values in output",
+            "\u2713 Correct train/test split ratio",
+            "\u2713 All features properly encoded as numeric"
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "timestamp": "2025-11-04T18:08:17.492864",
+    "dataset_used": "task/data/sample.csv",
+    "total_trials": 10,
+    "pass_rate": 20.0,
+    "duration_seconds": 358.304356,
+    "target_range": [
+      10,
+      40
+    ],
+    "trials": [
+      {
+        "trial_id": 1,
+        "success": false,
+        "feedback": "Error executing preprocessing function: object of type 'numpy.float64' has no len()",
+        "duration_seconds": 20.8024,
+        "timestamp": "2025-11-04T18:02:19.186208",
+        "submitted_answer": "import pandas as pd\nimport numpy as np\nfrom sklearn.model_selection import train_test_split\nfrom sklearn.preprocessing import StandardScaler, OneHotEncoder\nfrom sklearn.impute import SimpleImputer\nfrom sklearn.compose import ColumnTransformer\nfrom sklearn.pipeline import Pipeline\n\ndef preprocess_data(filepath, target_column, test_size=0.2, random_state=42):\n    \"\"\"\n    Comprehensive data preprocessing function with robust error handling and preprocessing.\n    \n    Parameters:\n    - filepath (str): Path to the CSV file\n    - target_column (str): Name of the target/label column\n    - test_size (float): Proportion of test set (default 0.2)\n    - random_state (int): Random seed for reproducibility\n    \n    Returns:\n    - X_train, X_test, y_train, y_test (numpy arrays)\n    \"\"\"\n    try:\n        # Load dataset\n        df = pd.read_csv(filepath)\n        \n        # Validate input\n        if target_column not in df.columns:\n            raise ValueError(f\"Target column '{target_column}' not found in dataset\")\n        \n        # Separate features and target\n        X = df.drop(columns=[target_column])\n        y = df[target_column]\n        \n        # Identify column types\n        numeric_features = X.select_dtypes(include=['int64', 'float64']).columns\n        categorical_features = X.select_dtypes(include=['object', 'category', 'bool']).columns\n        \n        # Validate that we have features\n        if len(X.columns) == 0:\n            raise ValueError(\"No features found in the dataset\")\n        \n        # Stratified train-test split BEFORE preprocessing to prevent data leakage\n        X_train, X_test, y_train, y_test = train_test_split(\n            X, y, test_size=test_size, random_state=random_state, stratify=y\n        )\n        \n        # Create preprocessing steps\n        numeric_transformer = Pipeline(steps=[\n            ('imputer', SimpleImputer(strategy='median')),  # Handle missing numeric values\n            ('scaler', StandardScaler())  # Normalize numeric features\n        ])\n        \n        categorical_transformer = Pipeline(steps=[\n            ('imputer', SimpleImputer(strategy='constant', fill_value='missing')),  # Handle missing categorical\n            ('onehot', OneHotEncoder(sparse_output=False, handle_unknown='ignore', drop='first'))  # One-hot encoding\n        ])\n        \n        # Combine preprocessing steps\n        preprocessor = ColumnTransformer(\n            transformers=[\n                ('num', numeric_transformer, numeric_features),\n                ('cat', categorical_transformer, categorical_features)\n            ])\n        \n        # Fit on training data ONLY (prevents data leakage)\n        X_train_processed = preprocessor.fit_transform(X_train)\n        X_test_processed = preprocessor.transform(X_test)\n        \n        # Final validation to ensure no NaN or infinite values\n        if np.isnan(X_train_processed).any() or np.isinf(X_train_processed).any():\n            raise ValueError(\"Preprocessing resulted in NaN or infinite values in training data\")\n        \n        if np.isnan(X_test_processed).any() or np.isinf(X_test_processed).any():\n            raise ValueError(\"Preprocessing resulted in NaN or infinite values in test data\")\n        \n        return X_train_processed, X_test_processed, y_train, y_test\n    \n    except Exception as e:\n        print(f\"Error in data preprocessing: {e}\")\n        raise",
+        "detailed_results": {
+          "total_requirements": 9,
+          "passed_requirements": 4,
+          "failed_requirements": [],
+          "detailed_feedback": [
+            "\u2713 No missing values in output",
+            "\u2713 No infinite values in output",
+            "\u2713 Correct train/test split ratio",
+            "\u2713 All features properly encoded as numeric"
+          ]
+        }
+      },
+      {
+        "trial_id": 2,
+        "success": false,
+        "feedback": "Error executing preprocessing function: object of type 'numpy.float64' has no len()",
+        "duration_seconds": 15.257285,
+        "timestamp": "2025-11-04T18:02:40.086747",
+        "submitted_answer": "import pandas as pd\nimport numpy as np\nfrom sklearn.model_selection import train_test_split\nfrom sklearn.preprocessing import StandardScaler, OneHotEncoder\nfrom sklearn.compose import ColumnTransformer\nfrom sklearn.pipeline import Pipeline\nfrom sklearn.impute import SimpleImputer\n\ndef preprocess_data(filepath, target_column, test_size=0.2, random_state=42):\n    \"\"\"\n    Comprehensive data preprocessing function for machine learning.\n    \n    Parameters:\n    -----------\n    filepath : str\n        Path to the input CSV file\n    target_column : str\n        Name of the target/label column\n    test_size : float, optional (default=0.2)\n        Proportion of the dataset to include in the test split\n    random_state : int, optional (default=42)\n        Controls the shuffling applied to the data before splitting\n    \n    Returns:\n    --------\n    X_train : numpy array\n        Preprocessed training features\n    X_test : numpy array\n        Preprocessed test features\n    y_train : numpy array\n        Training labels\n    y_test : numpy array\n        Test labels\n    \"\"\"\n    try:\n        # 1. Load the dataset\n        df = pd.read_csv(filepath)\n        \n        # Validate input\n        if target_column not in df.columns:\n            raise ValueError(f\"Target column '{target_column}' not found in dataset\")\n        \n        if df.empty:\n            raise ValueError(\"Input dataset is empty\")\n        \n        # Separate features and target\n        X = df.drop(columns=[target_column])\n        y = df[target_column]\n        \n        # Identify column types\n        numeric_features = X.select_dtypes(include=['int64', 'float64']).columns\n        categorical_features = X.select_dtypes(include=['object', 'category', 'bool']).columns\n        \n        # 2. Split data BEFORE preprocessing to avoid data leakage\n        X_train, X_test, y_train, y_test = train_test_split(\n            X, y, \n            test_size=test_size, \n            random_state=random_state, \n            stratify=y  # Stratified sampling\n        )\n        \n        # 3. Create preprocessing pipelines\n        # Numeric features: impute with median, then standardize\n        numeric_transformer = Pipeline(steps=[\n            ('imputer', SimpleImputer(strategy='median')),\n            ('scaler', StandardScaler())\n        ])\n        \n        # Categorical features: impute with most frequent, then one-hot encode\n        categorical_transformer = Pipeline(steps=[\n            ('imputer', SimpleImputer(strategy='most_frequent')),\n            ('onehot', OneHotEncoder(sparse_output=False, drop='first'))\n        ])\n        \n        # Combine transformers\n        preprocessor = ColumnTransformer(\n            transformers=[\n                ('num', numeric_transformer, numeric_features),\n                ('cat', categorical_transformer, categorical_features)\n            ])\n        \n        # 4. Fit the preprocessor on training data only\n        X_train_processed = preprocessor.fit_transform(X_train)\n        X_test_processed = preprocessor.transform(X_test)\n        \n        # 5. Final validation checks\n        if np.any(np.isinf(X_train_processed)) or np.any(np.isinf(X_test_processed)):\n            raise ValueError(\"Infinite values detected after preprocessing\")\n        \n        if np.any(np.isnan(X_train_processed)) or np.any(np.isnan(X_test_processed)):\n            raise ValueError(\"NaN values detected after preprocessing\")\n        \n        return X_train_processed, X_test_processed, y_train, y_test\n    \n    except Exception as e:\n        print(f\"Error in data preprocessing: {e}\")\n        raise",
+        "detailed_results": {
+          "total_requirements": 9,
+          "passed_requirements": 4,
+          "failed_requirements": [],
+          "detailed_feedback": [
+            "\u2713 No missing values in output",
+            "\u2713 No infinite values in output",
+            "\u2713 Correct train/test split ratio",
+            "\u2713 All features properly encoded as numeric"
+          ]
+        }
+      },
+      {
+        "trial_id": 3,
+        "success": false,
+        "feedback": "Error executing preprocessing function: object of type 'numpy.float64' has no len()",
+        "duration_seconds": 21.560712,
+        "timestamp": "2025-11-04T18:02:55.380073",
+        "submitted_answer": "import pandas as pd\nimport numpy as np\nfrom sklearn.preprocessing import StandardScaler, OneHotEncoder\nfrom sklearn.impute import SimpleImputer\nfrom sklearn.model_selection import train_test_split\nfrom sklearn.compose import ColumnTransformer\nfrom sklearn.pipeline import Pipeline\n\ndef preprocess_data(filepath, target_column, test_size=0.2, random_state=42):\n    \"\"\"\n    Preprocesses a dataset for machine learning training.\n    \n    Parameters:\n    -----------\n    filepath : str\n        Path to the CSV file\n    target_column : str\n        Name of the target variable column\n    test_size : float, optional (default=0.2)\n        Proportion of dataset to include in test split\n    random_state : int, optional (default=42)\n        Controls random state for reproducibility\n    \n    Returns:\n    --------\n    X_train, X_test, y_train, y_test : preprocessed datasets\n    \"\"\"\n    try:\n        # 1. Load dataset\n        df = pd.read_csv(filepath)\n        \n        # Validate input\n        if target_column not in df.columns:\n            raise ValueError(f\"Target column '{target_column}' not found in dataset\")\n        \n        # Separate features and target\n        X = df.drop(columns=[target_column])\n        y = df[target_column]\n        \n        # Identify column types\n        numeric_features = X.select_dtypes(include=['int64', 'float64']).columns\n        categorical_features = X.select_dtypes(include=['object', 'category', 'bool']).columns\n        \n        # 2. Initial Split with Stratification\n        X_train, X_test, y_train, y_test = train_test_split(\n            X, y, \n            test_size=test_size, \n            random_state=random_state, \n            stratify=y\n        )\n        \n        # 3 & 4. Create preprocessing steps for numeric and categorical features\n        preprocessor = ColumnTransformer(\n            transformers=[\n                # Numeric features: impute missing with median, then standard scale\n                ('num', Pipeline([\n                    ('imputer', SimpleImputer(strategy='median')),\n                    ('scaler', StandardScaler())\n                ]), numeric_features),\n                \n                # Categorical features: impute missing with most frequent, then one-hot encode\n                ('cat', Pipeline([\n                    ('imputer', SimpleImputer(strategy='most_frequent')),\n                    ('onehot', OneHotEncoder(sparse_output=False, drop='first'))\n                ]), categorical_features)\n            ])\n        \n        # 5. Fit preprocessor ONLY on training data\n        preprocessor.fit(X_train)\n        \n        # Transform both training and test data\n        X_train_processed = preprocessor.transform(X_train)\n        X_test_processed = preprocessor.transform(X_test)\n        \n        # 6. Validation checks\n        # Ensure no NaN or infinite values\n        if (np.isnan(X_train_processed).any() or \n            np.isnan(X_test_processed).any() or \n            np.isinf(X_train_processed).any() or \n            np.isinf(X_test_processed).any()):\n            raise ValueError(\"Preprocessing resulted in NaN or infinite values\")\n        \n        return X_train_processed, X_test_processed, y_train, y_test\n    \n    except Exception as e:\n        print(f\"Error in data preprocessing: {e}\")\n        raise\n\n# Example usage:\n# X_train, X_test, y_train, y_test = preprocess_data('data/your_dataset.csv', 'target_column')",
+        "detailed_results": {
+          "total_requirements": 9,
+          "passed_requirements": 4,
+          "failed_requirements": [],
+          "detailed_feedback": [
+            "\u2713 No missing values in output",
+            "\u2713 No infinite values in output",
+            "\u2713 Correct train/test split ratio",
+            "\u2713 All features properly encoded as numeric"
+          ]
+        }
+      },
+      {
+        "trial_id": 4,
+        "success": false,
+        "feedback": "Error executing preprocessing function: object of type 'numpy.float64' has no len()",
+        "duration_seconds": 29.737493,
+        "timestamp": "2025-11-04T18:03:16.966824",
+        "submitted_answer": "import pandas as pd\nimport numpy as np\nfrom sklearn.model_selection import train_test_split\nfrom sklearn.preprocessing import OneHotEncoder, StandardScaler\nfrom sklearn.impute import SimpleImputer\nfrom sklearn.compose import ColumnTransformer\nfrom sklearn.pipeline import Pipeline\n\ndef preprocess_data(filepath, target_column, test_size=0.2, random_state=42):\n    \"\"\"\n    Preprocess dataset for machine learning model training.\n    \n    Args:\n        filepath (str): Path to the CSV file\n        target_column (str): Name of the target variable column\n        test_size (float): Proportion of data for testing (default 0.2)\n        random_state (int): Seed for reproducibility (default 42)\n    \n    Returns:\n        tuple: X_train, X_test, y_train, y_test after preprocessing\n    \"\"\"\n    try:\n        # 1. Load dataset\n        df = pd.read_csv(filepath)\n        \n        # Input validation\n        if target_column not in df.columns:\n            raise ValueError(f\"Target column '{target_column}' not found in dataset\")\n        \n        # 2. Separate features and target\n        X = df.drop(columns=[target_column])\n        y = df[target_column]\n        \n        # Identify column types\n        numeric_features = X.select_dtypes(include=['int64', 'float64']).columns\n        categorical_features = X.select_dtypes(include=['object', 'category', 'bool']).columns\n        \n        # 3. Create preprocessing pipelines\n        numeric_transformer = Pipeline(steps=[\n            ('imputer', SimpleImputer(strategy='median')),  # Handle numeric missing values\n            ('scaler', StandardScaler())  # Normalize numeric features\n        ])\n        \n        categorical_transformer = Pipeline(steps=[\n            ('imputer', SimpleImputer(strategy='most_frequent')),  # Handle categorical missing values\n            ('onehot', OneHotEncoder(sparse_output=False, drop='first'))  # One-hot encoding\n        ])\n        \n        # 4. Combine preprocessing steps\n        preprocessor = ColumnTransformer(\n            transformers=[\n                ('num', numeric_transformer, numeric_features),\n                ('cat', categorical_transformer, categorical_features)\n            ])\n        \n        # 5. Split data BEFORE preprocessing (to prevent data leakage)\n        X_train, X_test, y_train, y_test = train_test_split(\n            X, y, \n            test_size=test_size, \n            stratify=y,  # Preserve class distribution\n            random_state=random_state\n        )\n        \n        # 6. Fit preprocessor on training data, transform both train and test\n        X_train_processed = preprocessor.fit_transform(X_train)\n        X_test_processed = preprocessor.transform(X_test)\n        \n        # 7. Final validation: Check for missing or infinite values\n        if (np.isnan(X_train_processed).any() or np.isinf(X_train_processed).any() or\n            np.isnan(X_test_processed).any() or np.isinf(X_test_processed).any()):\n            raise ValueError(\"Preprocessing resulted in NaN or infinite values\")\n        \n        return X_train_processed, X_test_processed, y_train, y_test\n    \n    except Exception as e:\n        print(f\"Error in data preprocessing: {e}\")\n        raise",
+        "detailed_results": {
+          "total_requirements": 9,
+          "passed_requirements": 4,
+          "failed_requirements": [],
+          "detailed_feedback": [
+            "\u2713 No missing values in output",
+            "\u2713 No infinite values in output",
+            "\u2713 Correct train/test split ratio",
+            "\u2713 All features properly encoded as numeric"
+          ]
+        }
+      },
+      {
+        "trial_id": 5,
+        "success": false,
+        "feedback": "Error executing preprocessing function: object of type 'numpy.float64' has no len()",
+        "duration_seconds": 28.322582,
+        "timestamp": "2025-11-04T18:03:46.720078",
+        "submitted_answer": "import pandas as pd\nimport numpy as np\nfrom sklearn.model_selection import train_test_split\nfrom sklearn.preprocessing import StandardScaler, OneHotEncoder\nfrom sklearn.compose import ColumnTransformer\nfrom sklearn.pipeline import Pipeline\nfrom sklearn.impute import SimpleImputer\n\ndef preprocess_data(filepath, target_column, test_size=0.2, random_state=42):\n    \"\"\"\n    Comprehensive data preprocessing function with robust handling of mixed data types.\n    \n    Args:\n        filepath (str): Path to the CSV dataset\n        target_column (str): Name of the target/label column\n        test_size (float): Proportion of test set (default 0.2)\n        random_state (int): Random seed for reproducibility\n    \n    Returns:\n        tuple: X_train, X_test, y_train, y_test after preprocessing\n    \"\"\"\n    try:\n        # 1. Load dataset\n        df = pd.read_csv(filepath)\n        \n        # Validate input\n        if target_column not in df.columns:\n            raise ValueError(f\"Target column '{target_column}' not found in dataset\")\n        \n        # Separate features and target\n        X = df.drop(columns=[target_column])\n        y = df[target_column]\n        \n        # Identify column types\n        numeric_features = X.select_dtypes(include=['int64', 'float64']).columns\n        categorical_features = X.select_dtypes(include=['object', 'category', 'bool']).columns\n        \n        # 2. Split data BEFORE preprocessing (prevent data leakage)\n        X_train, X_test, y_train, y_test = train_test_split(\n            X, y, \n            test_size=test_size, \n            random_state=random_state, \n            stratify=y  # Stratified sampling\n        )\n        \n        # 3-4. Create preprocessing pipeline with ColumnTransformer\n        preprocessor = ColumnTransformer(\n            transformers=[\n                # Numeric features: impute with median, then standardize\n                ('num', Pipeline([\n                    ('imputer', SimpleImputer(strategy='median')),\n                    ('scaler', StandardScaler())\n                ]), numeric_features),\n                \n                # Categorical features: impute with most frequent, then one-hot encode\n                ('cat', Pipeline([\n                    ('imputer', SimpleImputer(strategy='most_frequent')),\n                    ('onehot', OneHotEncoder(\n                        sparse_output=False, \n                        handle_unknown='ignore', \n                        drop='first'  # Avoid multicollinearity\n                    ))\n                ]), categorical_features)\n            ])\n        \n        # 5. Fit and transform training data\n        X_train_processed = preprocessor.fit_transform(X_train)\n        \n        # 6. Transform test data using training parameters\n        X_test_processed = preprocessor.transform(X_test)\n        \n        # 7. Validate output\n        def validate_output(X):\n            if np.any(np.isinf(X)) or np.any(np.isnan(X)):\n                raise ValueError(\"Processed data contains NaN or infinite values\")\n        \n        validate_output(X_train_processed)\n        validate_output(X_test_processed)\n        \n        return X_train_processed, X_test_processed, y_train, y_test\n    \n    except Exception as e:\n        print(f\"Preprocessing error: {e}\")\n        raise",
+        "detailed_results": {
+          "total_requirements": 9,
+          "passed_requirements": 4,
+          "failed_requirements": [],
+          "detailed_feedback": [
+            "\u2713 No missing values in output",
+            "\u2713 No infinite values in output",
+            "\u2713 Correct train/test split ratio",
+            "\u2713 All features properly encoded as numeric"
+          ]
+        }
+      },
+      {
+        "trial_id": 6,
+        "success": false,
+        "feedback": "Error calling preprocess_data function: 'target'",
+        "duration_seconds": 77.079527,
+        "timestamp": "2025-11-04T18:04:15.060928",
+        "submitted_answer": "import pandas as pd\nimport numpy as np\nimport io\nfrom sklearn.model_selection import train_test_split\nfrom sklearn.preprocessing import StandardScaler, OneHotEncoder\nfrom sklearn.impute import SimpleImputer\nfrom sklearn.compose import ColumnTransformer\nfrom sklearn.pipeline import Pipeline\n\ndef preprocess_data(data_str, target_column='Target', test_size=0.2, random_state=42):\n    \"\"\"\n    Preprocess dataset with comprehensive data cleaning and transformation.\n    \n    Args:\n    data_str (str): CSV data as a string\n    target_column (str): Name of the target variable column\n    test_size (float): Proportion of test set\n    random_state (int): Random seed for reproducibility\n    \n    Returns:\n    tuple: X_train, X_test, y_train, y_test\n    \"\"\"\n    try:\n        # Load the dataset from string\n        df = pd.read_csv(io.StringIO(data_str))\n        \n        # Remove 'F_ID' column if present\n        if 'F_ID' in df.columns:\n            df = df.drop(columns=['F_ID'])\n        \n        # Remove text columns\n        text_columns = df.select_dtypes(include=['object']).columns\n        df = df.drop(columns=text_columns)\n        \n        # Convert boolean columns to int for imputation\n        bool_columns = df.select_dtypes(include=['bool']).columns\n        for col in bool_columns:\n            df[col] = df[col].astype(int)\n        \n        # Separate features and target\n        y = df[target_column]\n        X = df.drop(columns=[target_column])\n        \n        # Identify column types\n        numeric_features = X.select_dtypes(include=['int64', 'float64']).columns.tolist()\n        categorical_features = X.select_dtypes(include=['category']).columns.tolist()\n        \n        # Split data BEFORE preprocessing to prevent data leakage\n        X_train, X_test, y_train, y_test = train_test_split(\n            X, y, \n            test_size=test_size, \n            random_state=random_state, \n            stratify=y\n        )\n        \n        # Create preprocessing pipelines\n        numeric_transformer = Pipeline(steps=[\n            ('imputer', SimpleImputer(strategy='median')),\n            ('scaler', StandardScaler())\n        ])\n        \n        categorical_transformer = Pipeline(steps=[\n            ('imputer', SimpleImputer(strategy='most_frequent')),\n            ('onehot', OneHotEncoder(\n                sparse_output=False, \n                handle_unknown='ignore', \n                drop='first'\n            ))\n        ])\n        \n        # Combine preprocessing steps\n        preprocessor = ColumnTransformer(\n            transformers=[\n                ('num', numeric_transformer, numeric_features),\n                ('cat', categorical_transformer, categorical_features)\n            ])\n        \n        # Fit on training data and transform both train and test\n        X_train_processed = preprocessor.fit_transform(X_train)\n        X_test_processed = preprocessor.transform(X_test)\n        \n        # Validate output\n        if (np.isnan(X_train_processed).any() or \n            np.isnan(X_test_processed).any() or \n            np.isinf(X_train_processed).any() or \n            np.isinf(X_test_processed).any()):\n            raise ValueError(\"Preprocessing resulted in NaN or infinite values\")\n        \n        return X_train_processed, X_test_processed, y_train, y_test\n    \n    except Exception as e:\n        print(f\"Error in preprocessing: {str(e)}\")\n        raise",
+        "detailed_results": {
+          "total_requirements": 9,
+          "passed_requirements": 0,
+          "failed_requirements": [],
+          "detailed_feedback": []
+        }
+      },
+      {
+        "trial_id": 7,
+        "success": false,
+        "feedback": "Error executing preprocessing function: object of type 'numpy.float64' has no len()",
+        "duration_seconds": 16.945518,
+        "timestamp": "2025-11-04T18:05:32.142512",
+        "submitted_answer": "import pandas as pd\nimport numpy as np\nfrom sklearn.model_selection import train_test_split\nfrom sklearn.preprocessing import StandardScaler, OneHotEncoder\nfrom sklearn.compose import ColumnTransformer\nfrom sklearn.pipeline import Pipeline\nfrom sklearn.impute import SimpleImputer\n\ndef preprocess_data(filepath, target_column, test_size=0.2, random_state=42):\n    \"\"\"\n    Comprehensive data preprocessing pipeline with multiple safeguards\n    \n    Args:\n        filepath (str): Path to the input CSV file\n        target_column (str): Name of the target variable column\n        test_size (float): Proportion of data to use for testing\n        random_state (int): Random seed for reproducibility\n    \n    Returns:\n        tuple: X_train, X_test, y_train, y_test\n    \"\"\"\n    try:\n        # Load data with robust error handling\n        try:\n            df = pd.read_csv(filepath)\n        except (FileNotFoundError, pd.errors.EmptyDataError) as e:\n            raise ValueError(f\"Error loading dataset: {e}\")\n        \n        # Validate target column exists\n        if target_column not in df.columns:\n            raise ValueError(f\"Target column '{target_column}' not found in dataset\")\n        \n        # Separate features and target\n        X = df.drop(columns=[target_column])\n        y = df[target_column]\n        \n        # Identify column types\n        numeric_features = X.select_dtypes(include=['int64', 'float64']).columns\n        categorical_features = X.select_dtypes(include=['object', 'category', 'bool']).columns\n        \n        # Stratified split preserving target distribution\n        X_train, X_test, y_train, y_test = train_test_split(\n            X, y, \n            test_size=test_size, \n            random_state=random_state, \n            stratify=y\n        )\n        \n        # Create preprocessing pipelines\n        numeric_transformer = Pipeline(steps=[\n            ('imputer', SimpleImputer(strategy='median')),  # Handle missing numeric values\n            ('scaler', StandardScaler())  # Normalize numeric features\n        ])\n        \n        categorical_transformer = Pipeline(steps=[\n            ('imputer', SimpleImputer(strategy='constant', fill_value='missing')),  # Handle missing categorical\n            ('onehot', OneHotEncoder(handle_unknown='ignore', sparse_output=False, drop='first'))  # Encode categories\n        ])\n        \n        # Combine preprocessing steps\n        preprocessor = ColumnTransformer(\n            transformers=[\n                ('num', numeric_transformer, numeric_features),\n                ('cat', categorical_transformer, categorical_features)\n            ])\n        \n        # Fit preprocessor on training data ONLY\n        X_train_processed = preprocessor.fit_transform(X_train)\n        X_test_processed = preprocessor.transform(X_test)\n        \n        # Additional safety checks\n        X_train_processed = np.nan_to_num(X_train_processed, nan=0.0, posinf=0.0, neginf=0.0)\n        X_test_processed = np.nan_to_num(X_test_processed, nan=0.0, posinf=0.0, neginf=0.0)\n        \n        return X_train_processed, X_test_processed, y_train, y_test\n    \n    except Exception as e:\n        raise RuntimeError(f\"Preprocessing failed: {str(e)}\")",
+        "detailed_results": {
+          "total_requirements": 9,
+          "passed_requirements": 4,
+          "failed_requirements": [],
+          "detailed_feedback": [
+            "\u2713 No missing values in output",
+            "\u2713 No infinite values in output",
+            "\u2713 Correct train/test split ratio",
+            "\u2713 All features properly encoded as numeric"
+          ]
+        }
+      },
+      {
+        "trial_id": 8,
+        "success": false,
+        "feedback": "Error executing preprocessing function: object of type 'numpy.float64' has no len()",
+        "duration_seconds": 99.213292,
+        "timestamp": "2025-11-04T18:05:49.101480",
+        "submitted_answer": "import pandas as pd\nimport numpy as np\nfrom sklearn.model_selection import train_test_split\nfrom sklearn.preprocessing import StandardScaler, OneHotEncoder\nfrom sklearn.impute import SimpleImputer\nfrom sklearn.compose import ColumnTransformer\nfrom sklearn.pipeline import Pipeline\n\ndef preprocess_data(filepath, target_column, test_size=0.2, random_state=42):\n    \"\"\"\n    Preprocess a dataset for machine learning model training.\n    \n    Args:\n        filepath (str): Path to the CSV file\n        target_column (str): Name of the target column\n        test_size (float): Proportion of the dataset to include in the test split\n        random_state (int): Controls the shuffling applied to the data before applying the split\n    \n    Returns:\n        X_train, X_test, y_train, y_test (numpy arrays): Preprocessed training and testing data\n    \"\"\"\n    try:\n        # 1. Load the dataset\n        df = pd.read_csv(filepath)\n        \n        # Validate input\n        if target_column not in df.columns:\n            raise ValueError(f\"Target column '{target_column}' not found in the dataset.\")\n        \n        # Separate features and target\n        X = df.drop(columns=[target_column])\n        y = df[target_column]\n        \n        # Identify column types\n        numeric_features = X.select_dtypes(include=['int64', 'float64']).columns\n        categorical_features = X.select_dtypes(include=['object']).columns\n        \n        # 2. Split data BEFORE preprocessing to prevent data leakage\n        X_train, X_test, y_train, y_test = train_test_split(\n            X, y, \n            test_size=test_size, \n            random_state=random_state, \n            stratify=y  # Stratified sampling\n        )\n        \n        # 3 & 4. Create preprocessing pipelines for numeric and categorical data\n        numeric_transformer = Pipeline(steps=[\n            ('imputer', SimpleImputer(strategy='median')),  # Handle missing numeric values\n            ('scaler', StandardScaler())  # Normalize numeric features\n        ])\n        \n        categorical_transformer = Pipeline(steps=[\n            ('imputer', SimpleImputer(strategy='most_frequent')),  # Handle missing categorical values\n            ('onehot', OneHotEncoder(sparse_output=False, drop='first'))  # Encode categorical with drop first\n        ])\n        \n        # Combine preprocessing steps\n        preprocessor = ColumnTransformer(\n            transformers=[\n                ('num', numeric_transformer, numeric_features),\n                ('cat', categorical_transformer, categorical_features)\n            ])\n        \n        # Fit the preprocessor on training data ONLY\n        X_train_processed = preprocessor.fit_transform(X_train)\n        X_test_processed = preprocessor.transform(X_test)\n        \n        # Verify no missing or infinite values\n        if np.isnan(X_train_processed).any() or np.isinf(X_train_processed).any():\n            raise ValueError(\"Preprocessing resulted in NaN or infinite values in training data.\")\n        \n        if np.isnan(X_test_processed).any() or np.isinf(X_test_processed).any():\n            raise ValueError(\"Preprocessing resulted in NaN or infinite values in test data.\")\n        \n        return X_train_processed, X_test_processed, y_train.values, y_test.values\n    \n    except Exception as e:\n        print(f\"Error in data preprocessing: {e}\")\n        raise",
+        "detailed_results": {
+          "total_requirements": 9,
+          "passed_requirements": 4,
+          "failed_requirements": [],
+          "detailed_feedback": [
+            "\u2713 No missing values in output",
+            "\u2713 No infinite values in output",
+            "\u2713 Correct train/test split ratio",
+            "\u2713 All features properly encoded as numeric"
+          ]
+        }
+      },
+      {
+        "trial_id": 9,
+        "success": true,
+        "feedback": "Passed 8/9 requirements - Good job!",
+        "duration_seconds": 17.335286,
+        "timestamp": "2025-11-04T18:07:28.349684",
+        "submitted_answer": "import pandas as pd\nimport numpy as np\nfrom sklearn.model_selection import train_test_split\nfrom sklearn.preprocessing import StandardScaler, OneHotEncoder\nfrom sklearn.compose import ColumnTransformer\nfrom sklearn.pipeline import Pipeline\nfrom sklearn.impute import SimpleImputer\n\ndef preprocess_data(filepath, target_column, test_size=0.2, random_state=42):\n    \"\"\"\n    Preprocesses mixed-type dataset for machine learning.\n    \n    Args:\n        filepath (str): Path to the CSV dataset\n        target_column (str): Name of the target column\n        test_size (float): Proportion of test split (default 0.2)\n        random_state (int): Random seed for reproducibility\n    \n    Returns:\n        tuple: X_train, X_test, y_train, y_test\n    \"\"\"\n    try:\n        # Load dataset\n        df = pd.read_csv(filepath)\n        \n        # Validate input\n        if target_column not in df.columns:\n            raise ValueError(f\"Target column '{target_column}' not found in dataset\")\n        \n        # Separate features and target\n        X = df.drop(columns=[target_column])\n        y = df[target_column]\n        \n        # Identify column types\n        numeric_features = X.select_dtypes(include=['int64', 'float64']).columns\n        categorical_features = X.select_dtypes(include=['object', 'category', 'bool']).columns\n        \n        # Stratified train-test split (preserves target distribution)\n        X_train, X_test, y_train, y_test = train_test_split(\n            X, y, \n            test_size=test_size, \n            random_state=random_state, \n            stratify=y\n        )\n        \n        # Create preprocessing pipelines\n        numeric_transformer = Pipeline(steps=[\n            ('imputer', SimpleImputer(strategy='median')),  # Handle numeric missing values\n            ('scaler', StandardScaler())  # Normalize numeric features\n        ])\n        \n        categorical_transformer = Pipeline(steps=[\n            ('imputer', SimpleImputer(strategy='constant', fill_value='missing')),  # Handle categorical missing values\n            ('onehot', OneHotEncoder(sparse_output=False, handle_unknown='ignore', drop='first'))  # Encode categories\n        ])\n        \n        # Combine transformers\n        preprocessor = ColumnTransformer(\n            transformers=[\n                ('num', numeric_transformer, numeric_features),\n                ('cat', categorical_transformer, categorical_features)\n            ])\n        \n        # Fit preprocessor on training data (prevents data leakage)\n        X_train_processed = preprocessor.fit_transform(X_train)\n        X_test_processed = preprocessor.transform(X_test)\n        \n        # Get feature names\n        onehot_encoder = preprocessor.named_transformers_['cat'].named_steps['onehot']\n        feature_names = (\n            list(numeric_features) + \n            list(onehot_encoder.get_feature_names_out(categorical_features))\n        )\n        \n        # Convert to DataFrame\n        X_train_processed = pd.DataFrame(X_train_processed, columns=feature_names, index=X_train.index)\n        X_test_processed = pd.DataFrame(X_test_processed, columns=feature_names, index=X_test.index)\n        \n        # Validate final output\n        if np.any(np.isinf(X_train_processed)) or np.any(np.isinf(X_test_processed)):\n            raise ValueError(\"Infinite values detected in processed data\")\n        \n        return X_train_processed, X_test_processed, y_train, y_test\n    \n    except Exception as e:\n        print(f\"Preprocessing error: {e}\")\n        raise",
+        "detailed_results": {
+          "total_requirements": 9,
+          "passed_requirements": 8,
+          "failed_requirements": [
+            "Features not properly normalized"
+          ],
+          "detailed_feedback": [
+            "\u2713 No missing values in output",
+            "\u2713 No infinite values in output",
+            "\u2713 Correct train/test split ratio",
+            "\u2713 All features properly encoded as numeric",
+            "\u2717 Only 2/6 features normalized",
+            "\u2713 Code suggests proper fit/transform usage or pipeline construction",
+            "\u2713 Categorical variables handled (feature count increased)",
+            "\u2713 Target distribution preserved (stratify used and check passed)",
+            "\u2713 Code includes input validation or error handling"
+          ]
+        }
+      },
+      {
+        "trial_id": 10,
+        "success": true,
+        "feedback": "Passed 8/9 requirements - Good job!",
+        "duration_seconds": 31.765805,
+        "timestamp": "2025-11-04T18:07:45.704430",
+        "submitted_answer": "import pandas as pd\nimport numpy as np\nfrom sklearn.model_selection import train_test_split\nfrom sklearn.preprocessing import StandardScaler, OneHotEncoder\nfrom sklearn.impute import SimpleImputer\nfrom sklearn.compose import ColumnTransformer\nfrom sklearn.pipeline import Pipeline\n\ndef preprocess_data(filepath, target_column, test_size=0.2, random_state=42):\n    \"\"\"\n    Comprehensive data preprocessing function for machine learning.\n    \n    Args:\n        filepath (str): Path to the CSV file\n        target_column (str): Name of the target variable column\n        test_size (float): Proportion of test set (default 0.2)\n        random_state (int): Seed for reproducibility (default 42)\n    \n    Returns:\n        tuple: X_train, X_test, y_train, y_test\n    \"\"\"\n    try:\n        # Load the dataset\n        df = pd.read_csv(filepath)\n        \n        # Validate input\n        if target_column not in df.columns:\n            raise ValueError(f\"Target column '{target_column}' not found in dataset\")\n        \n        # Separate features and target\n        X = df.drop(columns=[target_column])\n        y = df[target_column]\n        \n        # Identify column types\n        numeric_features = X.select_dtypes(include=['int64', 'float64']).columns\n        categorical_features = X.select_dtypes(include=['object', 'category', 'bool']).columns\n        \n        # Perform stratified train-test split\n        X_train, X_test, y_train, y_test = train_test_split(\n            X, y, \n            test_size=test_size, \n            stratify=y, \n            random_state=random_state\n        )\n        \n        # Create preprocessing pipeline\n        preprocessor = ColumnTransformer(\n            transformers=[\n                ('num', Pipeline([\n                    ('imputer', SimpleImputer(strategy='median')),\n                    ('scaler', StandardScaler())\n                ]), numeric_features),\n                ('cat', Pipeline([\n                    ('imputer', SimpleImputer(strategy='constant', fill_value='missing')),\n                    ('onehot', OneHotEncoder(sparse_output=False, handle_unknown='ignore', drop='first'))\n                ]), categorical_features)\n            ])\n        \n        # Fit and transform training data\n        X_train_processed = preprocessor.fit_transform(X_train)\n        X_test_processed = preprocessor.transform(X_test)\n        \n        # Get feature names for processed data\n        onehot_encoder = preprocessor.named_transformers_['cat'].named_steps['onehot']\n        cat_feature_names = list(onehot_encoder.get_feature_names_out(categorical_features))\n        numeric_feature_names = list(numeric_features)\n        feature_names = numeric_feature_names + cat_feature_names\n        \n        # Convert to DataFrame\n        X_train_df = pd.DataFrame(X_train_processed, columns=feature_names, index=X_train.index)\n        X_test_df = pd.DataFrame(X_test_processed, columns=feature_names, index=X_test.index)\n        \n        # Final validation checks\n        if X_train_df.isnull().any().any() or X_test_df.isnull().any().any():\n            raise ValueError(\"Unexpected NaN values in processed data\")\n        \n        if np.isinf(X_train_df).any().any() or np.isinf(X_test_df).any().any():\n            raise ValueError(\"Infinite values detected in processed data\")\n        \n        return X_train_df, X_test_df, y_train, y_test\n    \n    except Exception as e:\n        print(f\"Error in data preprocessing: {e}\")\n        raise",
+        "detailed_results": {
+          "total_requirements": 9,
+          "passed_requirements": 8,
+          "failed_requirements": [
+            "Features not properly normalized"
+          ],
+          "detailed_feedback": [
+            "\u2713 No missing values in output",
+            "\u2713 No infinite values in output",
+            "\u2713 Correct train/test split ratio",
+            "\u2713 All features properly encoded as numeric",
+            "\u2717 Only 2/6 features normalized",
+            "\u2713 Code suggests proper fit/transform usage or pipeline construction",
+            "\u2713 Categorical variables handled (feature count increased)",
+            "\u2713 Target distribution preserved (stratify used and check passed)",
+            "\u2713 Code includes input validation or error handling"
+          ]
+        }
+      }
+    ]
   }
 ]

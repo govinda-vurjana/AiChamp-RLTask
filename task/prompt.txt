@@ -1,28 +1,31 @@
-You are given a broken data preprocessing pipeline for a machine learning project. 
+You are a Machine Learning Engineer tasked with fixing a broken data preprocessing pipeline.
 
-The pipeline should:
-1. Load a CSV dataset with mixed data types
-2. Handle missing values appropriately 
-3. Encode categorical variables correctly
-4. Normalize/standardize numerical features
-5. Split data into train/test sets without data leakage
-6. Return clean, ML-ready data splits
+TASK: Write a correct `preprocess_data()` function that prepares a dataset for ML model training.
 
-TASK: Fix the broken preprocessing pipeline
+The function must:
+1. Load a CSV dataset with mixed data types (numeric, categorical, boolean)
+2. Handle missing values in all columns appropriately
+3. Encode categorical variables to numeric format (use OneHotEncoder)
+4. Normalize/standardize numerical features using StandardScaler
+5. Split data into train/test sets (80/20 split) WITHOUT data leakage
+6. Use stratified sampling to preserve target class distribution
+7. Include input validation and error handling
+8. Return clean data with NO missing or infinite values
 
-REQUIREMENTS:
-1. Fix all bugs in the preprocessing code
-2. Ensure no data leakage (normalize AFTER train/test split)
-3. Handle missing values appropriately for different data types
-4. Use proper encoding for categorical variables (OneHotEncoder for non-ordinal)
-5. Add input validation and error handling
-6. Ensure the output has no missing or infinite values
-7. Use stratified sampling to preserve target distribution
+CRITICAL REQUIREMENTS:
+✓ NO DATA LEAKAGE: Fit scalers/encoders on training data only, then transform test data
+✓ STRATIFIED SPLIT: Use stratify parameter in train_test_split
+✓ ALL FEATURES NUMERIC: Convert all categorical variables (no text columns in output)
+✓ NO MISSING VALUES: Handle NaN values before returning
+✓ PROPER NORMALIZATION: Use StandardScaler for numeric features
+✓ ERROR HANDLING: Add try-except blocks or input validation
+✓ CORRECT SPLIT RATIO: 80% train, 20% test
+✓ PRESERVE FEATURES: Don't drop categorical columns, encode them
+✓ CLEAN OUTPUT: No NaN, no inf values in final X_train, X_test
 
 AVAILABLE TOOLS:
-- python_expression: Execute Python code
-- file_reader: Read files from the data directory
-- dataset_download: Download datasets from URLs (if needed)
+- python_expression: Execute Python code and see output
+- file_reader: Read files from the task directory
 - submit_answer: Submit your corrected preprocessing function
 
 IMPORTANT CODING GUIDELINES:

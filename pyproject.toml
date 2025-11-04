@@ -1,12 +1,11 @@
 [project]
-name = "hello-py"
+name = "rl-task-anthropic"
 version = "0.1.0"
-description = "Add your description here"
+description = "RL Task for LLM Training - Data Preprocessing Pipeline Challenge"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
     "anthropic>=0.67.0",
-    "openai>=1.0.0",
     "python-dotenv>=1.0.0",
     "pandas>=2.0.0",
     "numpy>=1.24.0", 

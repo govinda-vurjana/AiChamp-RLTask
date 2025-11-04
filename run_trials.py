@@ -19,16 +19,8 @@ load_dotenv()
 from task.grader import grade_submission
 from task.tool_api import AVAILABLE_TOOLS
 
-# Import APIs based on provider
-API_PROVIDER = os.getenv("API_PROVIDER", "anthropic").lower()
-
-if API_PROVIDER == "anthropic":
-    from anthropic import AsyncAnthropic
-    from anthropic.types import MessageParam, ToolUnionParam
-elif API_PROVIDER == "openai":
-    from openai import AsyncOpenAI
-else:
-    raise ValueError(f"Unsupported API provider: {API_PROVIDER}")
+# Import Anthropic API
+from anthropic import AsyncAnthropic
 
 
 async def run_agent_loop(
@@ -41,17 +33,14 @@ async def run_agent_loop(
 ) -> Any:
     """Run the agent loop with the given prompt and tools."""
     
-    # Set default model based on provider
+    # Set default model
     if model is None:
-        model = "claude-3-5-haiku-latest" if API_PROVIDER == "anthropic" else "gpt-4o-mini"
+        model = "claude-3-5-haiku-latest"
     
     if verbose:
-        print(f"Using {API_PROVIDER.upper()} API with model: {model}")
+        print(f"Using Anthropic API with model: {model}")
     
-    if API_PROVIDER == "anthropic":
-        return await _run_anthropic_loop(prompt, tools, tool_handlers, max_steps, model, verbose)
-    else:
-        return await _run_openai_loop(prompt, tools, tool_handlers, max_steps, model, verbose)
+    return await _run_anthropic_loop(prompt, tools, tool_handlers, max_steps, model, verbose)
 
 
 async def _run_anthropic_loop(prompt, tools, tool_handlers, max_steps, model, verbose):
@@ -64,7 +53,7 @@ async def _run_anthropic_loop(prompt, tools, tool_handlers, max_steps, model, ve
             print(f"\n=== Step {step + 1}/{max_steps} ===")
 
         response = await client.messages.create(
-            model=model, max_tokens=1000, tools=tools, messages=messages
+            model=model, max_tokens=2000, tools=tools, messages=messages
         )
 
         has_tool_use = False
@@ -107,103 +96,6 @@ async def _run_anthropic_loop(prompt, tools, tool_handlers, max_steps, model, ve
         if has_tool_use:
             messages.append({"role": "assistant", "content": response.content})
             messages.append({"role": "user", "content": tool_results})
-
-            if submitted_answer is not None:
-                if verbose:
-                    print(f"\nAgent submitted answer")
-                return submitted_answer
-        else:
-            if verbose:
-                print("\nNo tool use in response, ending loop.")
-            break
-
-    if verbose:
-        print(f"\nReached maximum steps ({max_steps}) without submitting answer.")
-    return None
-
-
-async def _run_openai_loop(prompt, tools, tool_handlers, max_steps, model, verbose):
-    """Run agent loop with OpenAI API"""
-    client = AsyncOpenAI()
-    
-    # Convert tools to OpenAI format
-    openai_tools = []
-    for tool in tools:
-        openai_tools.append({
-            "type": "function",
-            "function": {
-                "name": tool["name"],
-                "description": tool["description"],
-                "parameters": tool["input_schema"]
-            }
-        })
-    
-    messages = [{"role": "user", "content": prompt}]
-
-    for step in range(max_steps):
-        if verbose:
-            print(f"\n=== Step {step + 1}/{max_steps} ===")
-
-        response = await client.chat.completions.create(
-            model=model,
-            max_tokens=1000,
-            tools=openai_tools,
-            messages=messages
-        )
-
-        message = response.choices[0].message
-        has_tool_use = False
-        submitted_answer = None
-
-        if message.content:
-            if verbose:
-                print(f"Assistant: {message.content}")
-
-        if message.tool_calls:
-            has_tool_use = True
-            
-            # Add assistant message with tool calls
-            messages.append({
-                "role": "assistant",
-                "content": message.content,
-                "tool_calls": message.tool_calls
-            })
-
-            # Process each tool call
-            for tool_call in message.tool_calls:
-                tool_name = tool_call.function.name
-                
-                if tool_name in tool_handlers:
-                    if verbose:
-                        print(f"Using tool: {tool_name}")
-
-                    handler = tool_handlers[tool_name]
-                    
-                    try:
-                        tool_input = json.loads(tool_call.function.arguments)
-                    except json.JSONDecodeError:
-                        tool_input = {}
-
-                    # Call the tool handler
-                    try:
-                        if isinstance(tool_input, dict) and tool_input:
-                            result = handler(**tool_input)
-                        else:
-                            # Handle case where tool_input is empty or not a dict
-                            result = {"error": "Invalid tool input"}
-                    except Exception as e:
-                        result = {"error": f"Tool execution error: {str(e)}"}
-
-                    # Check if answer was submitted
-                    if tool_name == "submit_answer" and result.get("submitted"):
-                        submitted_answer = result["answer"]
-
-                    # Add tool result message
-                    messages.append({
-                        "role": "tool",
-                        "tool_call_id": tool_call.id,
-                        "content": json.dumps(result, default=str)
-                    })
 
             if submitted_answer is not None:
                 if verbose:

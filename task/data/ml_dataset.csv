@@ -1,0 +1,51 @@
+age,income,education,employment_status,credit_score,debt_ratio,num_accounts,region,loan_approved
+25,35000.0,Bachelor,Employed,650,0.35,3,North,0
+45,85000.0,Master,Employed,720,0.22,5,South,1
+32,,Bachelor,Employed,680,0.28,4,East,1
+28,42000.0,High School,Unemployed,,0.45,2,West,0
+55,120000.0,PhD,Employed,780,0.15,8,North,1
+38,65000.0,Bachelor,Self-Employed,690,0.31,6,South,1
+,48000.0,Associate,Employed,640,0.38,3,East,0
+41,78000.0,Master,Employed,710,0.24,5,West,1
+29,38000.0,High School,Employed,620,0.42,2,North,0
+52,95000.0,Bachelor,Employed,740,0.19,7,South,1
+33,55000.0,Bachelor,Self-Employed,,0.33,4,East,1
+47,88000.0,Master,Employed,725,0.21,6,West,1
+26,32000.0,High School,Unemployed,610,0.48,1,North,0
+36,62000.0,Bachelor,Employed,695,0.29,5,South,1
+44,82000.0,Master,Self-Employed,715,0.23,6,East,1
+31,51000.0,Associate,Employed,670,0.34,4,West,0
+58,135000.0,PhD,Employed,790,0.12,9,North,1
+39,69000.0,Bachelor,Employed,700,0.27,5,South,1
+27,,High School,Employed,635,0.39,2,East,0
+49,92000.0,Master,Employed,735,0.18,7,West,1
+34,58000.0,Bachelor,Self-Employed,685,0.32,4,North,1
+42,75000.0,Bachelor,Employed,705,0.25,5,South,1
+30,45000.0,Associate,Unemployed,,0.44,3,East,0
+53,105000.0,Master,Employed,755,0.16,8,West,1
+37,64000.0,Bachelor,Employed,692,0.30,5,North,1
+46,86000.0,Master,Self-Employed,720,0.22,6,South,1
+28,40000.0,High School,Employed,625,0.41,2,East,0
+56,125000.0,PhD,Employed,785,0.13,9,West,1
+35,60000.0,Bachelor,Employed,688,0.31,4,North,1
+43,80000.0,Master,Employed,712,0.24,6,South,1
+,47000.0,Associate,Self-Employed,655,0.36,3,East,0
+50,98000.0,Bachelor,Employed,745,0.17,7,West,1
+32,54000.0,Bachelor,Employed,678,0.33,4,North,1
+48,90000.0,Master,Self-Employed,730,0.20,7,South,1
+29,43000.0,High School,Unemployed,630,0.43,2,East,0
+54,110000.0,PhD,Employed,765,0.14,8,West,1
+40,72000.0,Bachelor,Employed,702,0.26,5,North,1
+26,36000.0,High School,Employed,,0.46,2,South,0
+51,100000.0,Master,Employed,750,0.16,8,East,1
+33,56000.0,Bachelor,Self-Employed,682,0.32,4,West,1
+45,84000.0,Master,Employed,718,0.23,6,North,1
+31,50000.0,Associate,Employed,668,0.35,4,South,0
+57,130000.0,PhD,Employed,788,0.12,9,East,1
+38,67000.0,Bachelor,Employed,698,0.28,5,West,1
+27,39000.0,High School,Unemployed,622,0.44,2,North,0
+52,102000.0,Master,Employed,752,0.17,8,South,1
+36,63000.0,Bachelor,Self-Employed,693,0.30,5,East,1
+44,81000.0,Master,Employed,714,0.24,6,West,1
+30,46000.0,Associate,Employed,660,0.37,3,North,0
+59,140000.0,PhD,Employed,795,0.11,10,South,1
