@@ -9,6 +9,9 @@ This project provides a framework for creating and evaluating Reinforcement Lear
 The specific task in this repository challenges an AI agent to fix a broken data preprocessing pipeline. The agent is given a prompt explaining the requirements and a set of tools to interact with the environment. The agent's goal is to write a Python function called `preprocess_data` that correctly cleans, transforms, and prepares a dataset for model training, addressing common issues like missing values, categorical data, and data leakage.
 
 The evaluation is run for 10 trials by default, and the target success rate is between 10% and 40% to ensure the task is neither too easy nor too hard for effective learning.
+
+<img width="1174" height="386" alt="image" src="https://github.com/user-attachments/assets/f17c1004-4a70-44fa-a98f-f94f620dfd2e" />
+
 <img width="1744" height="590" alt="image" src="https://github.com/user-attachments/assets/629b0c34-359b-40e9-819b-e665d9008efd" />
 
 
